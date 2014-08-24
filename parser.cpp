@@ -45,8 +45,18 @@ Cell Parser::eval(const List& expr, Env* env) {
             }
             // introduce cell to environment (define name expr)
             case Kind::define: {
-                string name = get<string>(++p);
-                return (*env)[name] = eval({++p, expr.end()}, env); 
+                auto np = ++p;    // cell to be defined
+                if (np->kind == Kind::name) 
+                    return (*env)[get<string>(np)] = eval({++p, expr.end()}, env); 
+                else if (np->kind == Kind::expr) {   // (syntactic sugar for defining functions (define (func args) (body))
+                    auto declaration = get<List>(np);
+                    string name = get<string>(declaration.begin());
+                    auto params = List{declaration.begin() + 1, declaration.end()};
+                    auto body = get<List>(++p);
+                    procs.push_back({params, body, env});
+                    return (*env)[name] = {&procs.back()};
+                }
+                else return {error("Unfamiliar form to define")};
             }
             // (... (expr) ...) parentheses encloses expression (as parsed by expr())
             case Kind::expr: { 
@@ -99,9 +109,21 @@ List Parser::evlist(const List& expr, Env* env) {
             }
             // introduce cell to environment (define name expr)
             case Kind::define: {
-                string name = get<string>(++p);
-                res.push_back((*env)[name] = eval({++p, expr.end()}, env)); 
-                return res;
+                auto np = ++p;    // cell to be defined
+                if (np->kind == Kind::name) {
+                    res.push_back((*env)[get<string>(np)] = eval({++p, expr.end()}, env)); 
+                    return res;
+                }
+                else if (np->kind == Kind::expr) {   // (syntactic sugar for defining functions (define (func args) (body))
+                    auto declaration = get<List>(np);
+                    string name = get<string>(declaration.begin());
+                    auto params = List{declaration.begin() + 1, declaration.end()};
+                    auto body = get<List>(++p);
+                    procs.push_back({params, body, env});
+                    res.push_back((*env)[name] = {&procs.back()});
+                    return res;
+                }
+                else return {error("Unfamiliar form to define")};
             }
             // (... (expr) ...) parentheses encloses expression (as parsed by expr())
             case Kind::expr: {
