@@ -1,4 +1,4 @@
-#include <sstream>
+#include <fstream>
 #include "parser.h"
 #include "lexer.h"
 #include "environment.h"
@@ -18,6 +18,7 @@ namespace Driver {
             cout << "> ";
             cs.get();   // eat up first '('
             cout << eval(expr(), &e0) << '\n';    
+            if (cs.eof()) cs.reset();
         }
     }
 }
@@ -27,7 +28,7 @@ int main(int argc, char* argv[]) {
         case 1:
             break;
         case 2:
-            cs.set_input(new istringstream{argv[1]});
+            cs.set_input(new ifstream{argv[1]});
             break;
         default:
             Error::error("too many arguments");

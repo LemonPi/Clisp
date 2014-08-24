@@ -24,6 +24,7 @@ List Parser::expr() {   // returns an unevaluated expression from stream
                 if (cs.current().kind != Kind::rp) return {{error("')' expected")}};
                 break;
             }
+            case Kind::end:
             case Kind::rp: return res;  // for initial expr call, all nested expr calls will exit through first case
             default: res.push_back(cs.current()); break;   // anything else just push back as is
         }

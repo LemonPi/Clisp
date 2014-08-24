@@ -1,4 +1,4 @@
-### Clispp
+### Clisp
 ---------------------
 Lisp interpreter with a subset dialect of Scheme.
 I was inspired to make this after watching all the [SICP](http://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-001-structure-and-interpretation-of-computer-programs-spring-2005/video-lectures/) lectures.
@@ -16,7 +16,7 @@ Example:
                     (else (* x 
                              (expt x (- n 1)))))))
 
-(define nth-power (lambda (n)
+(define (nth-power n)
         (lambda (x)
                 (expt x n))))
 

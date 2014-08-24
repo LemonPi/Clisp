@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <map>
 #include <memory>
@@ -109,6 +110,9 @@ public:
 
     Cell get();    // get and return next cell
     const Cell& current() { return ct; } // most recently get cell
+    bool eof() { return ip->eof(); }
+    void sync() { ip->sync(); }
+    void reset() { set_input(cin); }
 
     void set_input(istream& instream_ref) { close(); ip = &instream_ref; owns = false; }
     void set_input(istream* instream_pt) { close(); ip = instream_pt; owns = true; }
@@ -128,7 +132,7 @@ Cell Cell_stream::get() {
     char c = 0;
 
     do {  // skip all whitespace including newline
-        if(!ip->get(c)) return ct = {Kind::end};  // no char can be get from ip
+        if(!ip->get(c)) { cout << "end reached";return ct = {Kind::end}; }  // no char can be get from ip
     } while (isspace(c));
 
     switch (c) {
@@ -255,6 +259,7 @@ List expr() {   // returns an unevaluated expression from stream
     // expr ... (expr) ...) starts with first lp eaten
     while (true) {
         cs.get();
+        cout << "Expr loop\n";
         switch (cs.current().kind) {
             case Kind::lp: {    // start of another expression
                 res.push_back(expr());  // construct with List, kind is expr and data stored in lstval
@@ -262,6 +267,7 @@ List expr() {   // returns an unevaluated expression from stream
                 if (cs.current().kind != Kind::rp) return {{error("')' expected")}};
                 break;
             }
+            case Kind::end:
             case Kind::rp: return res;  // for initial expr call, all nested expr calls will exit through first case
             default: res.push_back(cs.current()); break;   // anything else just push back as is
         }
@@ -269,10 +275,13 @@ List expr() {   // returns an unevaluated expression from stream
 }
 
 Cell eval(const List& expr, Env* env) {
+    cout << "Eval called\n";
     for (auto& cell : expr)
         print(cell);
     cout << endl;
+    cout << "Before loop" << endl;
     for (auto p = expr.begin(); p != expr.end(); ++p) {
+        cout << "kind: " << static_cast<char>(p->kind) << endl;
         switch (p->kind) {
             case Kind::number: { cout << "number encountered: " << get<double>(p) << endl; return *p; }
             // return next expression unevaluated, (quote expr)
@@ -286,8 +295,18 @@ Cell eval(const List& expr, Env* env) {
             }
             // introduce cell to environment (define name expr)
             case Kind::define: {
-                string name = get<string>(++p);
-                return (*env)[name] = eval({++p, expr.end()}, env); 
+                auto np = ++p;    // cell to be defined
+                if (np->kind == Kind::name) 
+                    return (*env)[get<string>(np)] = eval({++p, expr.end()}, env); 
+                else if (np->kind == Kind::expr) {   // (syntactic sugar for defining functions (define (func args) (body))
+                    auto declaration = get<List>(np);
+                    string name = get<string>(declaration.begin());
+                    auto params = List{declaration.begin() + 1, declaration.end()};
+                    auto body = get<List>(++p);
+                    procs.push_back({params, body, env});
+                    return (*env)[name] = {&procs.back()};
+                }
+                else return {error("Unfamiliar form to define")};
             }
             // (... (expr) ...) parentheses encloses expression (as parsed by expr())
             case Kind::expr: { 
@@ -361,9 +380,21 @@ List evlist(const List& expr, Env* env) {
             }
             // introduce cell to environment (define name expr)
             case Kind::define: {
-                string name = get<string>(++p);
-                res.push_back((*env)[name] = eval({++p, expr.end()}, env)); 
-                return res;
+                auto np = ++p;    // cell to be defined
+                if (np->kind == Kind::name) {
+                    res.push_back((*env)[get<string>(np)] = eval({++p, expr.end()}, env)); 
+                    return res;
+                }
+                else if (np->kind == Kind::expr) {   // (syntactic sugar for defining functions (define (func args) (body))
+                    auto declaration = get<List>(np);
+                    string name = get<string>(declaration.begin());
+                    auto params = List{declaration.begin() + 1, declaration.end()};
+                    auto body = get<List>(++p);
+                    procs.push_back({params, body, env});
+                    res.push_back((*env)[name] = {&procs.back()});
+                    return res;
+                }
+                else return {error("Unfamiliar form to define")};
             }
             // (... (expr) ...) parentheses encloses expression (as parsed by expr())
             case Kind::expr: {
@@ -561,9 +592,11 @@ void start() {
     envs.push_back(e0);
 
     while (true) {
+        cout << "Start loop\n";
         cout << "> ";
         cs.get();   // eat up first '('
         cout << eval(expr(), &e0) << '\n';    
+        if (cs.eof()) cs.reset();
     }
 }
 
@@ -574,7 +607,17 @@ double error(const string& s) {
     return 1.0;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    switch (argc) {
+        case 1:
+            break;
+        case 2:
+            cs.set_input(new ifstream{argv[1]});
+            break;
+        default:
+            error("too many arguments");
+            return 1;
+    }
     start();
     /* expr testing
     cs.get();   // eat first '('

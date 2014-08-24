@@ -57,6 +57,8 @@ namespace Lexer {
 
         Cell get();    // get and return next cell
         const Cell& current() { return ct; } // most recently get cell
+        bool eof() { return ip->eof(); }
+        void reset() { set_input(cin); }
 
         void set_input(istream& instream_ref) { close(); ip = &instream_ref; owns = false; }
         void set_input(istream* instream_pt) { close(); ip = instream_pt; owns = true; }
