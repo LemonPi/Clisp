@@ -10,10 +10,10 @@ namespace Lexer {
     using namespace std;
 
     enum class Kind : char {
-        cat, cons, car, cdr, list,  // primitive procs
-        define = 'd', lambda = 'l', number = '#', name = 'n', expr = 'e', proc = 'p', fals = 'f', tru = 't', cond = 'c', els = ',', end = '.',    // special cases
-        quote = '\'', lp = '(', rp = ')', 
-        mul = '*', add = '+', sub = '-', div = '/', less = '<', equal = '=', greater = '>'  // primitive operators
+        Cat, Cons, Car, Cdr, List,  // primitive procs
+        Define = 'd', Lambda = 'l', Number = '#', Name = 'n', Expr = 'e', Proc = 'p', False = 'f', True = 't', Cond = 'c', Else = ',', End = '.',    // special cases
+        Quote = '\'', Lp = '(', Rp = ')', And = '&', Not = '!', Or = '|',
+        Mul = '*', Add = '+', Sub = '-', Div = '/', Less = '<', Equal = '=', Greater = '>'  // primitive operators
     };
 
     struct Proc {
@@ -29,14 +29,14 @@ namespace Lexer {
         Data data;
 
         // constructors
-        Cell() : kind{Kind::end} {} // need default for vector storage
+        Cell() : kind{Kind::End} {} // need default for vector storage
         Cell(Kind k) : kind{k} {}
-        Cell(const double n) : kind{Kind::number}, data{n} {}
-        Cell(const string& s) : kind{Kind::name}, data{s} {}
-        Cell(const char* s) : kind{Kind::name}, data{s} {}
-        Cell(Proc* p) : kind{Kind::proc}, data{p} {}
-        Cell(List l) : kind{Kind::expr}, data{l} {}
-        explicit Cell(bool b) : kind{b? Kind::tru : Kind::fals} {}
+        Cell(const double n) : kind{Kind::Number}, data{n} {}
+        Cell(const string& s) : kind{Kind::Name}, data{s} {}
+        Cell(const char* s) : kind{Kind::Name}, data{s} {}
+        Cell(Proc* p) : kind{Kind::Proc}, data{p} {}
+        Cell(List l) : kind{Kind::Expr}, data{l} {}
+        explicit Cell(bool b) : kind{b? Kind::True : Kind::False} {}
 
         // copy and move constructors
         Cell(const Cell&) = default;
@@ -47,7 +47,7 @@ namespace Lexer {
         ~Cell() = default;
 
         // conversion operators
-        operator bool() { return kind != Kind::fals; }
+        operator bool() { return kind != Kind::False; }
     };
 
     class Cell_stream {
@@ -67,7 +67,7 @@ namespace Lexer {
         void close() { if (owns) delete ip; }
         bool owns;
         istream* ip;    // input stream pointer
-        Cell ct {Kind::end};   // current token, default value in case of misuse
+        Cell ct {Kind::End};   // current token, default value in case of misuse
     };
 
     // overloaded operators 
@@ -96,7 +96,7 @@ namespace Lexer {
         void operator()(const Lexer::List list) const {
             cout << '(';
             auto p = list.begin();
-            if(p->kind != Kind::number && p->kind != Kind::name && p->kind != Kind::expr) cout << static_cast<char>(p->kind);    // primitive
+            if(p->kind != Kind::Number && p->kind != Kind::Name && p->kind != Kind::Expr) cout << static_cast<char>(p->kind);    // primitive
             for (;p + 1 != list.end(); ++p) 
                 boost::apply_visitor(print_visitor(), p->data);
             boost::apply_visitor(print_visitor(""), p->data);
