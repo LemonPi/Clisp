@@ -1,9 +1,10 @@
 ### Clisp
 ---------------------
 
-Get Boost [here!](http://www.boost.org/users/download/)
+![Get boost here!](http://www.boost.org/style-v2/css_0/get-boost.png) <br>
 I originally intended to include the boost parts required, but as you can see from include\_list, 
-you're better off getting the proper boost distribution. To compensate, this repository contains
+you're better off getting the proper boost distribution. 
+To compensate, this repository contains
 a binary built on Ubuntu 14.04 which should work on most Unix based machines.
 
 Lisp interpreter with a subset dialect of Scheme.
