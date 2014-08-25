@@ -1,5 +1,11 @@
 ### Clisp
 ---------------------
+
+Get Boost [here!](http://www.boost.org/users/download/)
+I originally intended to include the boost parts required, but as you can see from include\_list, 
+you're better off getting the proper boost distribution. To compensate, this repository contains
+a binary built on Ubuntu 14.04 which should work on most Unix based machines.
+
 Lisp interpreter with a subset dialect of Scheme.
 I was inspired to make this after watching all the [SICP](http://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-001-structure-and-interpretation-of-computer-programs-spring-2005/video-lectures/) lectures.
 Part of this exercise was to explore how code and data are really the same

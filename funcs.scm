@@ -22,3 +22,7 @@
               ((= x 2) 1)
               (else (+ (fib (- x 1)) 
                        (fib (- x 2))))))
+
+(define (add x)
+        (cond ((empty? x) 0)
+              (else (+ (car x) (add (cdr x))))))
