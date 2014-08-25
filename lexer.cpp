@@ -7,6 +7,10 @@ using namespace Lexer;
 
 Cell_stream Lexer::cs {std::cin};
 
+map<string, Kind> Lexer::keywords {{"define", Kind::Define}, {"lambda", Kind::Lambda}, {"cond", Kind::Cond},
+    {"cons", Kind::Cons}, {"car", Kind::Car}, {"cdr", Kind::Cdr}, {"list", Kind::List}, {"else", Kind::Else},
+    {"empty?", Kind::Empty}, {"and", Kind::And}, {"or", Kind::Or}, {"not", Kind::Or}, {"cat", Kind::Cat}};
+
 Cell Cell_stream::get() {
     // get 1 char, decide what kind of cell is incoming,
     // appropriately get more char then return Cell
@@ -61,18 +65,7 @@ Cell Cell_stream::get() {
                 temp.pop_back();
                 ip->putback(')');
             }
-            if (temp == "define") ct.kind = Kind::Define;
-            else if (temp == "lambda") ct.kind = Kind::Lambda;
-            else if (temp == "cond") ct.kind = Kind::Cond;
-            else if (temp == "cons") ct.kind = Kind::Cons;
-            else if (temp == "car") ct.kind = Kind::Car;
-            else if (temp == "cdr") ct.kind = Kind::Cdr;
-            else if (temp == "list") ct.kind = Kind::List;
-            else if (temp == "else") ct.kind = Kind::Else;
-            else if (temp == "and") ct.kind = Kind::And;
-            else if (temp == "or") ct.kind = Kind::Or;
-            else if (temp == "not") ct.kind = Kind::Not;
-            else if (temp == "cat") ct.kind = Kind::Cat;
+            if (keywords.count(temp)) ct.kind = keywords[temp];
             else { ct.kind = Kind::Name; ct.data = temp; }
             return ct;
         }

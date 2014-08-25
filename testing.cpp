@@ -11,10 +11,15 @@ using boost::variant;
 // -------------------- data structures
 enum class Kind : char {
     Cat, Cons, Car, Cdr, List,  // primitive procs
-    Define = 'd', Lambda = 'l', Number = '#', Name = 'n', Expr = 'e', Proc = 'p', False = 'f', True = 't', Cond = 'c', Else = ',', End = '.',    // special cases
+    Define = 'd', Lambda = 'l', Number = '#', Name = 'n', Expr = 'e', Proc = 'p', False = 'f', True = 't', Cond = 'c', Else = ',', End = '.', Empty = ' ',    // special cases
     Quote = '\'', Lp = '(', Rp = ')', And = '&', Not = '!', Or = '|',
     Mul = '*', Add = '+', Sub = '-', Div = '/', Less = '<', Equal = '=', Greater = '>'  // primitive operators
 };
+
+map<string, Kind> keywords {{"define", Kind::Define}, {"lambda", Kind::Lambda}, {"cond", Kind::Cond},
+    {"cons", Kind::Cons}, {"car", Kind::Car}, {"cdr", Kind::Cdr}, {"list", Kind::List}, {"else", Kind::Else},
+    {"empty?", Kind::Empty}, {"and", Kind::And}, {"or", Kind::Or}, {"not", Kind::Or}, {"cat", Kind::Cat}};
+
 class Cell;
 class Env;
 int no_of_errors = 0;
@@ -180,18 +185,7 @@ Cell Cell_stream::get() {
                 temp.pop_back();
                 ip->putback(')');
             }
-            if (temp == "define") ct.kind = Kind::Define;
-            else if (temp == "lambda") ct.kind = Kind::Lambda;
-            else if (temp == "cond") ct.kind = Kind::Cond;
-            else if (temp == "cons") ct.kind = Kind::Cons;
-            else if (temp == "car") ct.kind = Kind::Car;
-            else if (temp == "cdr") ct.kind = Kind::Cdr;
-            else if (temp == "list") ct.kind = Kind::List;
-            else if (temp == "else") ct.kind = Kind::Else;
-            else if (temp == "and") ct.kind = Kind::And;
-            else if (temp == "or") ct.kind = Kind::Or;
-            else if (temp == "not") ct.kind = Kind::Not;
-            else if (temp == "cat") ct.kind = Kind::Cat;
+            if (keywords.count(temp)) ct.kind = keywords[temp];
             else { ct.kind = Kind::Name; ct.data = temp; }
             return ct;
         }
@@ -232,11 +226,13 @@ public:
     }
     void operator()(const List list) const {
         cout << '(';
-        auto p = list.begin();
-        if(p->kind != Kind::Number && p->kind != Kind::Name && p->kind != Kind::Expr) cout << static_cast<char>(p->kind);    // primitive
-        for (;p + 1 != list.end(); ++p) 
-            boost::apply_visitor(print_visitor(), p->data);
-        boost::apply_visitor(print_visitor(""), p->data);
+        if (list.size() > 0) {
+            auto p = list.begin();
+            if(p->kind != Kind::Number && p->kind != Kind::Name && p->kind != Kind::Expr) cout << static_cast<char>(p->kind);    // primitive
+            for (;p + 1 != list.end(); ++p) 
+                boost::apply_visitor(print_visitor(), p->data);
+            boost::apply_visitor(print_visitor(""), p->data);
+        }
         
         cout << ')' << end;
     }
@@ -333,6 +329,7 @@ Cell eval(const List& expr, Env* env) {
             // primitive procedures
             case Kind::Add: case Kind::Sub: case Kind::Mul: case Kind::Div: case Kind::Less: case Kind::Greater: case Kind::Equal: 
             case Kind::Cat: case Kind::Cons: case Kind::Car: case Kind::Cdr: case Kind::List: case Kind::And: case Kind::Or: case Kind::Not:
+            case Kind::Empty:
                              { cout << "calling apply prim, proc: " << static_cast<char>(p->kind);
                                  cout << endl;
                                  auto prim = *p;
@@ -436,7 +433,9 @@ List evlist(const List& expr, Env* env) {
             }
             // primitive procedures
             case Kind::Add: case Kind::Sub: case Kind::Mul: case Kind::Div: case Kind::Less: case Kind::Greater: case Kind::Equal: 
-            case Kind::Cat: case Kind::Cons: case Kind::Car: case Kind::Cdr: case Kind::List: case Kind::And: case Kind::Or: case Kind::Not: {
+            case Kind::Cat: case Kind::Cons: case Kind::Car: case Kind::Cdr: case Kind::List: case Kind::And: case Kind::Or: case Kind::Not:
+            case Kind::Empty: 
+            {
                 auto prim = *p;
                 auto argstart = ++p;
                                  cout << "primitive access successful\n";
@@ -604,6 +603,13 @@ Cell apply_prim(const Cell& prim, const List& args) {
                 return Cell{boost::apply_visitor(equal_visitor(get<double>(args.begin())), args[1].data)};
             return Cell{boost::apply_visitor(equal_visitor(get<string>(args.begin())), args[1].data)};
         }
+        case Kind::Empty: {
+            if (args[0].kind == Kind::Expr) {
+                cout << "List size in checking if empty: " << get<List>(args.begin()).size() << endl;
+                return Cell{get<List>(args.begin()).size() == 0};
+            }
+            return Cell{Kind::False};
+        }
         case Kind::Greater: {   // for the sake of efficiency not implemented using !< && !=
             if (args[1].kind == Kind::Number)   // a > b == b < a, just use less
                 return Cell{boost::apply_visitor(less_visitor(get<double>(args.begin() + 1)), args[0].data)};
@@ -622,8 +628,17 @@ Cell apply_prim(const Cell& prim, const List& args) {
         case Kind::Not: return Cell{args[0].kind == Kind::False? Kind::True : Kind::False};  // only expect 1 argument
         case Kind::List:              // same as cons in this implementation, just that cons conventionally expects only 2 args
         case Kind::Cons: return args; // return List of the args
-        case Kind::Car: return boost::get<List>(args[0].data)[0]; // args is a list of one cell which holds a list itself
-        case Kind::Cdr: return boost::get<List>(args[0].data)[1];
+        case Kind::Car: {
+            if (args[0].kind != Kind::Expr) return args[0];
+            return boost::get<List>(args[0].data)[0]; // args is a list of one cell which holds a list itself
+        }
+        case Kind::Cdr: { 
+            if (args[0].kind != Kind::Expr) return {List {}};
+            auto list = boost::get<List>(args[0].data); 
+            if (list.size() == 1) return {List {}};
+            else if (list.size() == 2) return list[1];
+            return {List{list.begin() + 1, list.end()}}; 
+        }
         default: return error("Mismatch in apply_prim");
     }
 }

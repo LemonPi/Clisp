@@ -2,6 +2,7 @@
 #define bc_lexer
 #include <string>
 #include <iostream>
+#include <map>
 #include <memory>   // shared_ptr
 #include "boost/variant.hpp"
 #include "forward.h"
@@ -11,7 +12,7 @@ namespace Lexer {
 
     enum class Kind : char {
         Cat, Cons, Car, Cdr, List,  // primitive procs
-        Define = 'd', Lambda = 'l', Number = '#', Name = 'n', Expr = 'e', Proc = 'p', False = 'f', True = 't', Cond = 'c', Else = ',', End = '.',    // special cases
+        Define = 'd', Lambda = 'l', Number = '#', Name = 'n', Expr = 'e', Proc = 'p', False = 'f', True = 't', Cond = 'c', Else = ',', End = '.', Empty = ' ',   // special cases
         Quote = '\'', Lp = '(', Rp = ')', And = '&', Not = '!', Or = '|',
         Mul = '*', Add = '+', Sub = '-', Div = '/', Less = '<', Equal = '=', Greater = '>'  // primitive operators
     };
@@ -77,6 +78,9 @@ namespace Lexer {
     void print(const Cell&);
 
     extern Cell_stream cs;
+    extern map<string, Kind> keywords;
+
+
 
     // visitors
     class print_visitor : public boost::static_visitor<> {
@@ -94,16 +98,15 @@ namespace Lexer {
             cout << "proc" << end;
         }
         void operator()(const Lexer::List list) const {
+            cout << '(';
             if (list.size() > 0) {
-                cout << '(';
                 auto p = list.begin();
                 if(p->kind != Kind::Number && p->kind != Kind::Name && p->kind != Kind::Expr) cout << static_cast<char>(p->kind);    // primitive
                 for (;p + 1 != list.end(); ++p) 
                     boost::apply_visitor(print_visitor(), p->data);
                 boost::apply_visitor(print_visitor(""), p->data);
-                
-                cout << ')' << end;
             }
+            cout << ')' << end;
         }
     };
 

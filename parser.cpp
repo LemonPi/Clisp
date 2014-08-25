@@ -78,7 +78,8 @@ Cell Parser::eval(const List& expr, Env* env) {
             }
             // primitive procedures
             case Kind::Add: case Kind::Sub: case Kind::Mul: case Kind::Div: case Kind::Less: case Kind::Greater: case Kind::Equal: 
-            case Kind::Cat: case Kind::Cons: case Kind::Car: case Kind::Cdr: case Kind::List: case Kind::And: case Kind::Or: case Kind::Not: {
+            case Kind::Cat: case Kind::Cons: case Kind::Car: case Kind::Cdr: case Kind::List: case Kind::And: case Kind::Or: case Kind::Not: 
+            case Kind::Empty: {
                 auto prim = *p;
                 return apply_prim(prim, evlist({++p, expr.end()}, env));
             }
@@ -158,7 +159,8 @@ List Parser::evlist(const List& expr, Env* env) {
             }
             // primitive procedures
             case Kind::Add: case Kind::Sub: case Kind::Mul: case Kind::Div: case Kind::Less: case Kind::Greater: case Kind::Equal: 
-            case Kind::Cat: case Kind::Cons: case Kind::Car: case Kind::Cdr: case Kind::List: case Kind::And: case Kind::Or: case Kind::Not: {
+            case Kind::Cat: case Kind::Cons: case Kind::Car: case Kind::Cdr: case Kind::List: case Kind::And: case Kind::Or: case Kind::Not:
+            case Kind::Empty: {
                 auto prim = *p;
                 res.push_back(apply_prim(prim, evlist({++p, expr.end()}, env)));
                 return res; // finished reading entire expression
@@ -245,6 +247,11 @@ Cell Parser::apply_prim(const Cell& prim, const List& args) {
                 return Cell{boost::apply_visitor(equal_visitor(get<double>(args.begin())), args[1].data)};
             return Cell{boost::apply_visitor(equal_visitor(get<string>(args.begin())), args[1].data)};
         }
+        case Kind::Empty: {
+            if (args[0].kind == Kind::Expr)
+                return Cell{get<List>(args.begin()).size() == 0};
+            return Cell{Kind::False};
+        }
         case Kind::Greater: {   // for the sake of efficiency not implemented using !< && !=
             if (args[1].kind == Kind::Number)   // a > b == b < a, just use less
                 return Cell{boost::apply_visitor(less_visitor(get<double>(args.begin() + 1)), args[0].data)};
@@ -263,8 +270,11 @@ Cell Parser::apply_prim(const Cell& prim, const List& args) {
         case Kind::Not: return Cell{args[0].kind == Kind::False? Kind::True : Kind::False};  // only expect 1 argument
         case Kind::List:              // same as cons in this implementation, just that cons conventionally expects only 2 args
         case Kind::Cons: return args; // return List of the args
-        case Kind::Car: return boost::get<List>(args[0].data)[0]; // args is a list of one cell which holds a list itself
-        case Kind::Cdr: {
+        case Kind::Car: {
+            if (args[0].kind != Kind::Expr) return args[0];
+            return boost::get<List>(args[0].data)[0]; // args is a list of one cell which holds a list itself
+        }
+        case Kind::Cdr: { 
             if (args[0].kind != Kind::Expr) return {List {}};
             auto list = boost::get<List>(args[0].data); 
             if (list.size() == 1) return {List {}};

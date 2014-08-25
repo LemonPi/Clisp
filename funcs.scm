@@ -16,3 +16,9 @@
 (define cube (nth-power 3))
 
 (define square_and_cube (compose square cube))
+
+(define (fib x)
+        (cond ((= x 1) 1)
+              ((= x 2) 1)
+              (else (+ (fib (- x 1)) 
+                       (fib (- x 2))))))
