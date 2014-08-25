@@ -94,14 +94,16 @@ namespace Lexer {
             cout << "proc" << end;
         }
         void operator()(const Lexer::List list) const {
-            cout << '(';
-            auto p = list.begin();
-            if(p->kind != Kind::Number && p->kind != Kind::Name && p->kind != Kind::Expr) cout << static_cast<char>(p->kind);    // primitive
-            for (;p + 1 != list.end(); ++p) 
-                boost::apply_visitor(print_visitor(), p->data);
-            boost::apply_visitor(print_visitor(""), p->data);
-            
-            cout << ')' << end;
+            if (list.size() > 0) {
+                cout << '(';
+                auto p = list.begin();
+                if(p->kind != Kind::Number && p->kind != Kind::Name && p->kind != Kind::Expr) cout << static_cast<char>(p->kind);    // primitive
+                for (;p + 1 != list.end(); ++p) 
+                    boost::apply_visitor(print_visitor(), p->data);
+                boost::apply_visitor(print_visitor(""), p->data);
+                
+                cout << ')' << end;
+            }
         }
     };
 

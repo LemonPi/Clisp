@@ -242,7 +242,13 @@ Cell Parser::apply_prim(const Cell& prim, const List& args) {
         case Kind::List:              // same as cons in this implementation, just that cons conventionally expects only 2 args
         case Kind::Cons: return args; // return List of the args
         case Kind::Car: return boost::get<List>(args[0].data)[0]; // args is a list of one cell which holds a list itself
-        case Kind::Cdr: return boost::get<List>(args[0].data)[1];
+        case Kind::Cdr: {
+            if (args[0].kind != Kind::Expr) return {List {}};
+            auto list = boost::get<List>(args[0].data); 
+            if (list.size() == 1) return {List {}};
+            else if (list.size() == 2) return list[1];
+            return {List{list.begin() + 1, list.end()}}; 
+        }
         default: return error("Mismatch in apply_prim");
     }
 }
