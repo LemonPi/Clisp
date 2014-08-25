@@ -652,9 +652,14 @@ void start(bool print_res) {
     while (true) {
         if (print_res) cout << "> ";
         cs.get();   // eat up first '('
-        auto res = eval(expr(), &e0);
-        if (print_res)
-            cout << res << '\n';    
+        try {
+            auto res = eval(expr(), &e0);
+            if (print_res)
+                cout << res << '\n';    
+        }
+        catch (exception& e) {
+            cout << "Bad expression: " << e.what() << endl;
+        }
         if (cs.eof()) { cs.reset(); print_res = true; }
     }
 }
