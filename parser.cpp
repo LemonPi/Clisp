@@ -85,7 +85,18 @@ Cell Parser::eval(const List& expr, Env* env) {
             case Kind::Name: {  // lexer cannot distinguish between varname and procname, have to evaluate against environment
                 Cell x = env->lookup(get<string>(p));
                 if (x.kind != Kind::Proc) return x;
-                return apply(x, evlist({++p, expr.end()}, env));    // user defined proc
+                List args;  // user defined proc
+                while ((p+1)->kind == Kind::Number || (p+1)->kind == Kind::Quote || (p+1)->kind == Kind::Name) { // evaluate as many arguments locally as possible
+                    ++p;
+                    if (p->kind == Kind::Number) args.push_back(*p);
+                    else if (p->kind == Kind::Quote) args.push_back(*++p);
+                    else args.push_back(env->lookup(get<string>(p)));
+                }
+                if (p != expr.end()) { 
+                    List addargs = evlist({++p, expr.end()}, env); // evlist any remaining expressions
+                    args.insert(args.end(), addargs.begin(), addargs.end());
+                }
+                return apply(x, args);    
             }
             default: return {error("Unmatched cell in eval")};
         }
@@ -155,7 +166,18 @@ List Parser::evlist(const List& expr, Env* env) {
             case Kind::Name: {  // lexer cannot distinguish between varname and procname, have to evaluate against environment
                 Cell x = env->lookup(get<string>(p));
                 if (x.kind != Kind::Proc) { res.push_back(x); break; }
-                else { res.push_back(apply(x, evlist({++p, expr.end()}, env))); return res; }   // user defined proc
+                List args;
+                while ((p+1)->kind == Kind::Number || (p+1)->kind == Kind::Quote || (p+1)->kind == Kind::Name) { // evaluate as many arguments locally as possible
+                    ++p;
+                    if (p->kind == Kind::Number) args.push_back(*p);
+                    else if (p->kind == Kind::Quote) args.push_back(*++p);
+                    else args.push_back(env->lookup(get<string>(p)));
+                }
+                if (p != expr.end()) { 
+                    List addargs = evlist({++p, expr.end()}, env); // evlist any remaining expressions
+                    args.insert(args.end(), addargs.begin(), addargs.end());
+                }
+                res.push_back(apply(x, args)); return res;         // user defined proc
             }
             default: error("Unmatched in evlist"); break;
         }

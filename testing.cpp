@@ -355,8 +355,22 @@ Cell eval(const List& expr, Env* env) {
                                  return apply_prim(prim, args); }
             case Kind::Name: {  // lexer cannot distinguish between varname and procname, have to evaluate against environment
                 Cell x = env->lookup(get<string>(p));
-                if (x.kind != Kind::Proc) return x;
-                return apply(x, evlist({++p, expr.end()}, env));    // user defined proc
+                if (p != expr.begin()) cout << "Not at start of expression\n";
+                if (x.kind != Kind::Proc) return x;    // don't evaluate procedures in the middle of an expression
+                cout << "User defined proc (eval): " << get<string>(p) << endl;
+                // return apply(x, evlist({++p, expr.end()}, env));    // user defined proc
+                List args;
+                while ((p+1)->kind == Kind::Number || (p+1)->kind == Kind::Quote || (p+1)->kind == Kind::Name) { // evaluate as many arguments locally as possible
+                    ++p;
+                    if (p->kind == Kind::Number) args.push_back(*p);
+                    else if (p->kind == Kind::Quote) args.push_back(*++p);
+                    else args.push_back(env->lookup(get<string>(p)));
+                }
+                if (p != expr.end()) { 
+                    List addargs = evlist({++p, expr.end()}, env); // evlist any remaining expressions
+                    args.insert(args.end(), addargs.begin(), addargs.end());
+                }
+                return apply(x, args);    // user defined proc
             }
             default: return {error("Unmatched cell in eval")};
         }
@@ -445,7 +459,20 @@ List evlist(const List& expr, Env* env) {
             case Kind::Name: {  // lexer cannot distinguish between varname and procname, have to evaluate against environment
                 Cell x = env->lookup(get<string>(p));
                 if (x.kind != Kind::Proc) { res.push_back(x); break; }
-                else { res.push_back(apply(x, evlist({++p, expr.end()}, env))); return res; }   // user defined proc
+                else { 
+                    cout << "User defined proc (evlist): " << get<string>(p) << endl;
+                    List args;
+                    while ((p+1)->kind == Kind::Number || (p+1)->kind == Kind::Quote || (p+1)->kind == Kind::Name) { // evaluate as many arguments locally as possible
+                        ++p;
+                        if (p->kind == Kind::Number) args.push_back(*p);
+                        else if (p->kind == Kind::Quote) args.push_back(*++p);
+                        else args.push_back(env->lookup(get<string>(p)));
+                    }
+                    if (p != expr.end()) { 
+                        List addargs = evlist({++p, expr.end()}, env); // evlist any remaining expressions
+                        args.insert(args.end(), addargs.begin(), addargs.end());
+                    }
+                    res.push_back(apply(x, args)); return res; }   // user defined proc
             }
             default: error("Unmatched in evlist"); break;
         }
@@ -634,6 +661,7 @@ int main(int argc, char* argv[]) {
             cs.set_input(new ifstream{argv[1]});
             break;
         case 3: {
+            cs.set_input(new ifstream{argv[1]});
             string option {argv[2]};
             if (option == "-p" || option == "-print") print_res = true;
             break;
