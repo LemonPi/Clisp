@@ -1,7 +1,7 @@
 ### Clisp
 ---------------------
 
-![Get boost here!](http://www.boost.org/style-v2/css_0/get-boost.png) <br>
+<a href="http://www.boost.org/users/download/"><img alt="Get boost" src="http://www.boost.org/style-v2/css_0/get-boost.png"></a> <br>
 I originally intended to include the boost parts required, but as you can see from include\_list, 
 you're better off getting the proper boost distribution. 
 To compensate, this repository contains
