@@ -3,6 +3,7 @@
 #include <vector>
 #include <map>
 #include <memory>
+#include <stdexcept>
 #include "boost/variant.hpp"
 
 using namespace std;
@@ -22,8 +23,6 @@ map<string, Kind> keywords {{"define", Kind::Define}, {"lambda", Kind::Lambda}, 
 
 class Cell;
 class Env;
-int no_of_errors = 0;
-double error(const string&);
 
 using List = vector<Cell>;
 
@@ -81,8 +80,7 @@ public:
             return env;
         else if (outer != nullptr) 
             return outer->findframe(n);
-        error("Unbound variable");
-        exit(1);
+        throw runtime_error("Unbound variable");
     }
 
     Cell& lookup(string n) {
@@ -268,7 +266,7 @@ List expr() {   // returns an unevaluated expression from stream
             case Kind::Lp: {    // start of another expression
                 res.push_back(expr());  // construct with List, kind is expr and data stored in lstval
                 // after geting in an ( expression ' ' <-- expecting rp
-                if (cs.current().kind != Kind::Rp) return {{error("')' expected")}};
+                if (cs.current().kind != Kind::Rp) throw runtime_error("')' expected");
                 break;
             }
             case Kind::End:
@@ -286,9 +284,11 @@ Cell eval(const List& expr, Env* env) {
         switch (p->kind) {
             case Kind::Number: { cout << "number encountered: " << get<double>(p) << endl; return *p; }
             // return next expression unevaluated, (quote expr)
-            case Kind::Quote: return *++p;  
+            case Kind::Quote: 
+                if (p + 1 == expr.end()) throw runtime_error("Quote expects 1 arg");
+                return *++p;  
             case Kind::Lambda: {    // (lambda (params) (body))
-                assert(p + 2 != expr.end()); 
+                if (p + 2 >= expr.end()) throw runtime_error("Malformed lambda expression");
                 auto params = get<List>(++p);
                 auto body = get<List>(++p);
                 procs.push_back({params, body, env});    // introduce onto heap
@@ -296,6 +296,7 @@ Cell eval(const List& expr, Env* env) {
             }
             // introduce cell to environment (define name expr)
             case Kind::Define: {
+                if (p + 2 >= expr.end()) throw runtime_error("Malformed define expression");
                 auto np = ++p;    // cell to be defined
                 if (np->kind == Kind::Name) 
                     return (*env)[get<string>(np)] = eval({++p, expr.end()}, env); 
@@ -307,7 +308,7 @@ Cell eval(const List& expr, Env* env) {
                     procs.push_back({params, body, env});
                     return (*env)[name] = {&procs.back()};
                 }
-                else return {error("Unfamiliar form to define")};
+                else throw runtime_error("Unfamiliar form to define");
             }
             // (... (expr) ...) parentheses encloses expression (as parsed by expr())
             case Kind::Expr: { 
@@ -321,7 +322,7 @@ Cell eval(const List& expr, Env* env) {
                     const List& clause = get<List>(p);
                     if (clause[0].kind == Kind::Else) {
                         if (p + 1 == expr.end()) return eval({clause[1]}, env);
-                        else return {error("Else clause not at end of condition")};
+                        else throw runtime_error("Else clause not at end of condition");
                     }
                     if (eval({clause[0]}, env)) return eval({clause[1]}, env);
                 }
@@ -331,6 +332,7 @@ Cell eval(const List& expr, Env* env) {
             case Kind::Cat: case Kind::Cons: case Kind::Car: case Kind::Cdr: case Kind::List: case Kind::And: case Kind::Or: case Kind::Not:
             case Kind::Empty:
                              { cout << "calling apply prim, proc: " << static_cast<char>(p->kind);
+                                if (p + 1 == expr.end()) throw runtime_error("Primitives take at least one argument");
                                  cout << endl;
                                  auto prim = *p;
                                  auto argstart = ++p;
@@ -369,7 +371,7 @@ Cell eval(const List& expr, Env* env) {
                 }
                 return apply(x, args);    // user defined proc
             }
-            default: return {error("Unmatched cell in eval")};
+            default: throw runtime_error("Unmatched cell in eval");
         }
     }
     return {};
@@ -385,8 +387,11 @@ List evlist(const List& expr, Env* env) {
         switch (p->kind) {
             case Kind::Number: res.push_back(*p); break;
             // return next expression unevaluated, (quote expr)
-            case Kind::Quote: res.push_back(*++p); break;  
+            case Kind::Quote: 
+                if (p + 1 == expr.end()) throw runtime_error("Quote expects 1 arg");
+                res.push_back(*++p); break;  
             case Kind::Lambda: {    // (lambda (params) (body))
+                if (p + 2 >= expr.end()) throw runtime_error("Malformed lambda expression");
                 assert(p + 2 != expr.end()); 
                 auto params = get<List>(++p);
                 auto body = get<List>(++p);
@@ -396,6 +401,7 @@ List evlist(const List& expr, Env* env) {
             }
             // introduce cell to environment (define name expr)
             case Kind::Define: {
+                if (p + 2 >= expr.end()) throw runtime_error("Malformed define expression");
                 auto np = ++p;    // cell to be defined
                 if (np->kind == Kind::Name) {
                     res.push_back((*env)[get<string>(np)] = eval({++p, expr.end()}, env)); 
@@ -410,7 +416,7 @@ List evlist(const List& expr, Env* env) {
                     res.push_back((*env)[name] = {&procs.back()});
                     return res;
                 }
-                else return {error("Unfamiliar form to define")};
+                else throw runtime_error("Unfamiliar form to define");
             }
             // (... (expr) ...) parentheses encloses expression (as parsed by expr())
             case Kind::Expr: {
@@ -425,7 +431,7 @@ List evlist(const List& expr, Env* env) {
                     const List& clause = get<List>(p);
                     if (clause[0].kind == Kind::Else) {
                         if (p + 1 == expr.end()) { res.push_back(eval({clause[1]}, env)); return res; }
-                        else return {error("Else clause not at end of condition")};
+                        else throw runtime_error("Else clause not at end of condition");
                     }
                     if (eval({clause[0]}, env)) { res.push_back(eval({clause[1]}, env)); break; }
                 }
@@ -436,6 +442,7 @@ List evlist(const List& expr, Env* env) {
             case Kind::Cat: case Kind::Cons: case Kind::Car: case Kind::Cdr: case Kind::List: case Kind::And: case Kind::Or: case Kind::Not:
             case Kind::Empty: 
             {
+                if (p + 1 == expr.end()) throw runtime_error("Primitives take at least one argument");
                 auto prim = *p;
                 auto argstart = ++p;
                                  cout << "primitive access successful\n";
@@ -473,7 +480,7 @@ List evlist(const List& expr, Env* env) {
                     }
                     res.push_back(apply(x, args)); return res; }   // user defined proc
             }
-            default: error("Unmatched in evlist"); break;
+            default: throw runtime_error("Unmatched in evlist"); 
         }
     }
     return res;
@@ -498,7 +505,7 @@ Cell apply(const Cell& c, const List& args) {  // expect fully evaluated args
 namespace Parser {
     Env* bind(const List& params, const List& args, Env* env) {
         Env newenv {env};
-        assert(params.size() == args.size());
+        if (params.size() != args.size()) throw runtime_error("# of args provided and expected mismatch");
         auto q = args.begin();
         for (auto p = params.begin(); p != params.end(); ++p, ++q) {
             cout << "Binding " << get<string>(p) << " to " << *q << endl;
@@ -639,7 +646,7 @@ Cell apply_prim(const Cell& prim, const List& args) {
             else if (list.size() == 2) return list[1];
             return {List{list.begin() + 1, list.end()}}; 
         }
-        default: return error("Mismatch in apply_prim");
+        default: throw runtime_error("Mismatoh in apply_prim");
     }
 }
 
@@ -664,13 +671,6 @@ void start(bool print_res) {
     }
 }
 
-// ---------------- error
-double error(const string& s) {
-    no_of_errors++;
-    cerr << "error: " << s << '\n';
-    return 1.0;
-}
-
 int main(int argc, char* argv[]) {
     bool print_res {false};
     switch (argc) {
@@ -687,7 +687,7 @@ int main(int argc, char* argv[]) {
             break;
         }
         default:
-            error("too many arguments");
+            throw runtime_error("too many arguments");
             return 1;
     }
     start(print_res);

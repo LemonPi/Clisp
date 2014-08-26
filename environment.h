@@ -32,8 +32,7 @@ namespace Environment {
                 return env;
             else if (outer != nullptr) 
                 return outer->findframe(n);
-            Error::error("Unbound variable");
-            exit(1);
+            throw runtime_error("Unbound variable");
         }
 
         Cell& lookup(string n) {

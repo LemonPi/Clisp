@@ -46,10 +46,10 @@ int main(int argc, char* argv[]) {
             break;
         }
         default:
-            Error::error("too many arguments");
+            throw runtime_error("too many arguments");
             return 1;
     }
     Driver::start(print_res);
 
-    return Error::no_of_errors;
+    return 0;
 }
