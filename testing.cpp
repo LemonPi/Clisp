@@ -357,15 +357,15 @@ Cell eval(const List& expr, Env* env) {
                 cout << "User defined proc (eval): " << get<string>(p) << endl;
                 // return apply(x, evlist({++p, expr.end()}, env));    // user defined proc
                 List args;
-                while ((p+1)->kind == Kind::Number || (p+1)->kind == Kind::Quote || (p+1)->kind == Kind::Name) { // evaluate as many arguments locally as possible
-                    ++p;
+                while (++p != expr.end()) {  // evaluate as many arguments locally as possible
                     if (p->kind == Kind::Number) args.push_back(*p);
                     else if (p->kind == Kind::Quote) args.push_back(*++p);
-                    else args.push_back(env->lookup(get<string>(p)));
-                }
-                if (p != expr.end()) { 
-                    List addargs = evlist({++p, expr.end()}, env); // evlist any remaining expressions
-                    args.insert(args.end(), addargs.begin(), addargs.end());
+                    else if (p->kind == Kind::Name) args.push_back(env->lookup(get<string>(p)));
+                    else {
+                        List addargs = evlist({p, expr.end()}, env); // evlist any remaining expressions
+                        args.insert(args.end(), addargs.begin(), addargs.end());
+                        break;
+                    }
                 }
                 return apply(x, args);    // user defined proc
             }
@@ -461,15 +461,15 @@ List evlist(const List& expr, Env* env) {
                 else { 
                     cout << "User defined proc (evlist): " << get<string>(p) << endl;
                     List args;
-                    while ((p+1)->kind == Kind::Number || (p+1)->kind == Kind::Quote || (p+1)->kind == Kind::Name) { // evaluate as many arguments locally as possible
-                        ++p;
+                    while (++p != expr.end()) {  // evaluate as many arguments locally as possible
                         if (p->kind == Kind::Number) args.push_back(*p);
                         else if (p->kind == Kind::Quote) args.push_back(*++p);
-                        else args.push_back(env->lookup(get<string>(p)));
-                    }
-                    if (p != expr.end()) { 
-                        List addargs = evlist({++p, expr.end()}, env); // evlist any remaining expressions
-                        args.insert(args.end(), addargs.begin(), addargs.end());
+                        else if (p->kind == Kind::Name) args.push_back(env->lookup(get<string>(p)));
+                        else {
+                            List addargs = evlist({p, expr.end()}, env); // evlist any remaining expressions
+                            args.insert(args.end(), addargs.begin(), addargs.end());
+                            break;
+                        }
                     }
                     res.push_back(apply(x, args)); return res; }   // user defined proc
             }

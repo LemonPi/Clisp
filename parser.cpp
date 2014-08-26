@@ -87,15 +87,15 @@ Cell Parser::eval(const List& expr, Env* env) {
                 Cell x = env->lookup(get<string>(p));
                 if (x.kind != Kind::Proc) return x;
                 List args;  // user defined proc
-                while ((p+1)->kind == Kind::Number || (p+1)->kind == Kind::Quote || (p+1)->kind == Kind::Name) { // evaluate as many arguments locally as possible
-                    ++p;
+                while (++p != expr.end()) {  // evaluate as many arguments locally as possible
                     if (p->kind == Kind::Number) args.push_back(*p);
                     else if (p->kind == Kind::Quote) args.push_back(*++p);
-                    else args.push_back(env->lookup(get<string>(p)));
-                }
-                if (p != expr.end()) { 
-                    List addargs = evlist({++p, expr.end()}, env); // evlist any remaining expressions
-                    args.insert(args.end(), addargs.begin(), addargs.end());
+                    else if (p->kind == Kind::Name) args.push_back(env->lookup(get<string>(p)));
+                    else {
+                        List addargs = evlist({p, expr.end()}, env); // evlist any remaining expressions
+                        args.insert(args.end(), addargs.begin(), addargs.end());
+                        break;
+                    }
                 }
                 return apply(x, args);    
             }
@@ -169,15 +169,15 @@ List Parser::evlist(const List& expr, Env* env) {
                 Cell x = env->lookup(get<string>(p));
                 if (x.kind != Kind::Proc) { res.push_back(x); break; }
                 List args;
-                while ((p+1)->kind == Kind::Number || (p+1)->kind == Kind::Quote || (p+1)->kind == Kind::Name) { // evaluate as many arguments locally as possible
-                    ++p;
+                while (++p != expr.end()) {  // evaluate as many arguments locally as possible
                     if (p->kind == Kind::Number) args.push_back(*p);
                     else if (p->kind == Kind::Quote) args.push_back(*++p);
-                    else args.push_back(env->lookup(get<string>(p)));
-                }
-                if (p != expr.end()) { 
-                    List addargs = evlist({++p, expr.end()}, env); // evlist any remaining expressions
-                    args.insert(args.end(), addargs.begin(), addargs.end());
+                    else if (p->kind == Kind::Name) args.push_back(env->lookup(get<string>(p)));
+                    else {
+                        List addargs = evlist({p, expr.end()}, env); // evlist any remaining expressions
+                        args.insert(args.end(), addargs.begin(), addargs.end());
+                        break;
+                    }
                 }
                 res.push_back(apply(x, args)); return res;         // user defined proc
             }
