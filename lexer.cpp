@@ -23,17 +23,13 @@ Cell Cell_stream::get() {
     switch (c) {
         case '!':
         case '&':
-        case '*':
-        case '/':
-        case '+':
-        case '-':
         case '(':
         case ')':
-        case '<':
-        case '>':
-        case '=':
+        case '*':
+        case '+':
         case '\'':
-        case '|':
+        case '-':
+        case '/':
             return ct = {static_cast<Kind>(c)}; // primitive operators
         case '0':
         case '1':
@@ -44,13 +40,17 @@ Cell Cell_stream::get() {
         case '6':
         case '7':
         case '8':
-        case '9':
-        case '.': {  // possibly make . list shorthand
+        case '9': {
             ip->putback(c);
             double temp;
             *ip >> temp;
             return ct = {temp};
         }
+        case '<':
+        case '>':
+        case '=':
+        case '|':
+            return ct = {static_cast<Kind>(c)}; // primitive operators
         case 'a':
         case 'c':
         case 'd':
