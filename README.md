@@ -1,19 +1,28 @@
 ### Clisp
 ---------------------
 
+A lightweight (~550 lines of code) Lisp interpreter with Scheme dialect.
+I was inspired to make this after watching all the [SICP](http://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-001-structure-and-interpretation-of-computer-programs-spring-2005/video-lectures/) lectures.
+
+Features:
+ - file inclusion e.g. (include test.scm), can be nested inside files 
+ - first class procedures and by extension higher order procedures
+ - lexical scoping so you don't have to worry about local variables clashing in called procedures
+ - free typed arguments, e.g. (define (add x) ...) x is expected by the semantics to be a list, but not enforced
+
+
 <a href="http://www.boost.org/users/download/"><img alt="Get boost" src="http://www.boost.org/style-v2/css_0/get-boost.png"></a> <br>
 I originally intended to include the boost parts required, but as you can see from include\_list, 
 you're better off getting the proper boost distribution. 
 To compensate, this repository contains
 a binary built on Ubuntu 14.04 which should work on most Unix based machines.
 
-Lisp interpreter with a subset dialect of Scheme.
-I was inspired to make this after watching all the [SICP](http://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-001-structure-and-interpretation-of-computer-programs-spring-2005/video-lectures/) lectures.
-Part of this exercise was to explore how code and data are really the same
 
 Example:
 
 ```
+(include funcs.scm)
+
 (define compose (lambda (f g)
         (lambda (x)
                 (f (g x)))))
@@ -44,10 +53,11 @@ Tips:
  - build by typing "make" in the same directory
  - list parameters (such as x for add above) treated same as 'normal' parameters
  - interpret files with `./clisp [filename] [-p]`, add -p or -print option to force printing of file evaluation, silent by default (assumes a lot of definitions)
+    - include files with (include filename), which can be nested
  - build debug information (with step by step info) by changing build target and source in makefile to "testing" and "testing.cpp" respectively
  - requires a compiler supporting C++11
- - uses boost::variant (comes with this build)
- - keywords (so far): define, lambda, cond, cons, cdr, list, else, and, or, not, empty?
+ - uses boost::variant (link above)
+ - keywords (so far): define, lambda, cond, cons, cdr, list, else, and, or, not, empty?, include
  - use 'quote to signify string
      - `string` will raise an error if it's not defined, but `'string` will return string
  - use cat primitive instead of + to concatenate strings

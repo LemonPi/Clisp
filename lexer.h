@@ -11,6 +11,7 @@ namespace Lexer {
     using namespace std;
 
     enum class Kind : char {
+        Include,
         Cat, Cons, Car, Cdr, List,  // primitive procs
         Define = 'd', Lambda = 'l', Number = '#', Name = 'n', Expr = 'e', Proc = 'p', False = 'f', True = 't', Cond = 'c', Else = ',', End = '.', Empty = ' ',   // special cases
         Quote = '\'', Lp = '(', Rp = ')', And = '&', Not = '!', Or = '|',
@@ -53,21 +54,24 @@ namespace Lexer {
 
     class Cell_stream {
     public:
-        Cell_stream(istream& instream_ref) : owns{false}, ip{&instream_ref} {}
-        Cell_stream(istream* instream_pt)  : owns{true}, ip{instream_pt} {}
+        Cell_stream(istream& instream_ref) : ip{&instream_ref} {}
+        Cell_stream(istream* instream_pt)  : ip{instream_pt}, owns{instream_pt} {}
+        ~Cell_stream() { for (auto p : owns) delete p; }
 
         Cell get();    // get and return next cell
         const Cell& current() { return ct; } // most recently get cell
         bool eof() { return ip->eof(); }
-        void reset() { set_input(cin); }
+        bool base() { return old.size() == 0; }
+        void reset() { ip = old.back(); old.pop_back(); }
 
-        void set_input(istream& instream_ref) { close(); ip = &instream_ref; owns = false; }
-        void set_input(istream* instream_pt) { close(); ip = instream_pt; owns = true; }
+        void set_input(istream& instream_ref) { old.push_back(ip); ip = &instream_ref; }
+        void set_input(istream* instream_pt) { old.push_back(ip); ip = instream_pt; owns.push_back(ip); }
 
     private:
-        void close() { if (owns) delete ip; }
-        bool owns;
+        // void close() { if (owns) delete ip; }
         istream* ip;    // input stream pointer
+        vector<istream*> old;  // for switching between input streams through include
+        vector<istream*> owns;
         Cell ct {Kind::End};   // current token, default value in case of misuse
     };
 

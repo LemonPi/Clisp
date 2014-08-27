@@ -1,6 +1,7 @@
 #include "parser_impl.h"
 #include "environment.h"
 #include "error.h"
+#include <fstream>
 
 using namespace std;
 using namespace Lexer;
@@ -33,6 +34,9 @@ List Parser::expr() {   // returns an unevaluated expression from stream
 Cell Parser::eval(const List& expr, Env* env) {
     for (auto p = expr.begin(); p != expr.end(); ++p) {
         switch (p->kind) {
+            case Kind::Include: 
+                cs.set_input(new ifstream{get<string>(++p)}); 
+                return {Kind::Include};
             case Kind::Number: return *p;
             // return next expression unevaluated, (quote expr)
             case Kind::Quote: 
@@ -112,6 +116,9 @@ List Parser::evlist(const List& expr, Env* env) {
     List res;   // instead of returning right away, push back into res then return res
     for (auto p = expr.begin(); p != expr.end(); ++p) {
         switch (p->kind) {
+            case Kind::Include: 
+                cs.set_input(new ifstream{get<string>(++p)}); 
+                return {Kind::Include};
             case Kind::Number: res.push_back(*p); break;
             // return next expression unevaluated, (quote expr)
             case Kind::Quote: 

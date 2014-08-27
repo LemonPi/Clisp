@@ -21,11 +21,11 @@ namespace Driver {
                 auto res = eval(expr(), &e0);
                 if (print_res)
                     cout << res << '\n';    
+                if (res.kind == Kind::End || cs.eof()) { cs.reset(); if (cs.base()) print_res = true; }
             }
             catch (exception& e) {
                 cout << "Bad expression: " << e.what() << endl;    // continue loop
             }
-            if (cs.eof()) { cs.reset(); print_res = true; }
         }
     }
 }

@@ -11,15 +11,17 @@ using boost::variant;
 
 // -------------------- data structures
 enum class Kind : char {
+    Include,        // meta processing
     Cat, Cons, Car, Cdr, List,  // primitive procs
     Define = 'd', Lambda = 'l', Number = '#', Name = 'n', Expr = 'e', Proc = 'p', False = 'f', True = 't', Cond = 'c', Else = ',', End = '.', Empty = ' ',    // special cases
-    Quote = '\'', Lp = '(', Rp = ')', And = '&', Not = '!', Or = '|',
+    Quote = '\'', Lp = '(', Rp = ')', And = '&', Not = '!', Or = '|', 
     Mul = '*', Add = '+', Sub = '-', Div = '/', Less = '<', Equal = '=', Greater = '>'  // primitive operators
 };
 
 map<string, Kind> keywords {{"define", Kind::Define}, {"lambda", Kind::Lambda}, {"cond", Kind::Cond},
     {"cons", Kind::Cons}, {"car", Kind::Car}, {"cdr", Kind::Cdr}, {"list", Kind::List}, {"else", Kind::Else},
-    {"empty?", Kind::Empty}, {"and", Kind::And}, {"or", Kind::Or}, {"not", Kind::Or}, {"cat", Kind::Cat}};
+    {"empty?", Kind::Empty}, {"and", Kind::And}, {"or", Kind::Or}, {"not", Kind::Or}, {"cat", Kind::Cat},
+    {"include", Kind::Include}};
 
 class Cell;
 class Env;
@@ -108,22 +110,24 @@ vector<Proc> procs;
 // ------------------- stream
 class Cell_stream {
 public:
-    Cell_stream(istream& instream_ref) : owns{false}, ip{&instream_ref} {}
-    Cell_stream(istream* instream_pt)  : owns{true}, ip{instream_pt} {}
+    Cell_stream(istream& instream_ref) : ip{&instream_ref} {}
+    Cell_stream(istream* instream_pt)  : ip{instream_pt}, owns{instream_pt} {}
+    ~Cell_stream() { for (auto p : owns) delete p; }
 
     Cell get();    // get and return next cell
     const Cell& current() { return ct; } // most recently get cell
     bool eof() { return ip->eof(); }
-    void sync() { ip->sync(); }
-    void reset() { set_input(cin); }
+    bool base() { return old.size() == 0; }
+    void reset() { ip = old.back(); old.pop_back(); }
 
-    void set_input(istream& instream_ref) { close(); ip = &instream_ref; owns = false; }
-    void set_input(istream* instream_pt) { close(); ip = instream_pt; owns = true; }
+    void set_input(istream& instream_ref) { old.push_back(ip); /*close();*/ ip = &instream_ref; }
+    void set_input(istream* instream_pt) { old.push_back(ip); /*close();*/ ip = instream_pt; owns.push_back(ip); }
 
 private:
-    void close() { if (owns) delete ip; }
-    bool owns;
+    // void close() { if (owns) delete ip; }
     istream* ip;    // input stream pointer
+    vector<istream*> old;  // for switching between input streams through include
+    vector<istream*> owns;
     Cell ct {Kind::End};   // current token, default value in case of misuse
 };
 
@@ -173,6 +177,7 @@ Cell Cell_stream::get() {
         case 'c':
         case 'd':
         case 'e':
+        case 'i':
         case 'l':
         case 'n':
         case 'o':{  // potential primitives
@@ -282,7 +287,11 @@ Cell eval(const List& expr, Env* env) {
     cout << endl;
     for (auto p = expr.begin(); p != expr.end(); ++p) {
         switch (p->kind) {
-            case Kind::Number: { cout << "number encountered: " << get<double>(p) << endl; return *p; }
+            case Kind::Include: 
+                cout << "Including file: " << get<string>(++p) << endl;
+                cs.set_input(new ifstream{get<string>(p)}); 
+                return {Kind::Include};
+            case Kind::Number: cout << "number encountered: " << get<double>(p) << endl; return *p;
             // return next expression unevaluated, (quote expr)
             case Kind::Quote: 
                 if (p + 1 == expr.end()) throw runtime_error("Quote expects 1 arg");
@@ -385,6 +394,10 @@ List evlist(const List& expr, Env* env) {
     List res;   // instead of returning right away, push back into res then return res
     for (auto p = expr.begin(); p != expr.end(); ++p) {
         switch (p->kind) {
+            case Kind::Include: 
+                cout << "Including file\n";
+                cs.set_input(new ifstream{get<string>(++p)}); 
+                return {};
             case Kind::Number: res.push_back(*p); break;
             // return next expression unevaluated, (quote expr)
             case Kind::Quote: 
@@ -650,24 +663,27 @@ Cell apply_prim(const Cell& prim, const List& args) {
     }
 }
 
-
-void start(bool print_res) {
+void alloc_env() {
     envs.reserve(max_capacity * 4); // reserve to preserve pointers
     procs.reserve(max_capacity);
     envs.push_back(e0);
+}
 
+void start(bool print_res) {
     while (true) {
+        cout << "Start loop\n";
         if (print_res) cout << "> ";
         cs.get();   // eat up first '('
         try {
+            cout << "Reading from stream\n";
             auto res = eval(expr(), &e0);
             if (print_res)
                 cout << res << '\n';    
+            if (res.kind == Kind::End || cs.eof()) { cout << "At end of stream, reseting\n"; cs.reset(); if (cs.base()) print_res =  true; }
         }
         catch (exception& e) {
             cout << "Bad expression: " << e.what() << endl;
         }
-        if (cs.eof()) { cs.reset(); print_res = true; }
     }
 }
 
@@ -690,6 +706,7 @@ int main(int argc, char* argv[]) {
             throw runtime_error("too many arguments");
             return 1;
     }
+    alloc_env();
     start(print_res);
     /* expr testing
     cs.get();   // eat first '('
