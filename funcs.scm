@@ -1,8 +1,9 @@
-(define compose (lambda (f g)
+;; comments use semicolons, use double semicolon ;; for start of line comments
+(define compose (lambda (f g)   ; fundamental higher order procedure
         (lambda (x)
                 (f (g x)))))
 
-(define expt (lambda (x n)
+(define expt (lambda (x n)      ; exponential 
               (cond ((= n 1) x)
                     (else (* x 
                              (expt x (- n 1)))))))
@@ -17,7 +18,7 @@
 
 (define square_and_cube (compose square cube))
 
-(define (fib x)
+(define (fib x)                 ; inefficient recursive fib
         (cond ((= x 1) 1)
               ((= x 2) 1)
               (else (+ (fib (- x 1)) 

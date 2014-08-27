@@ -15,7 +15,8 @@ enum class Kind : char {
     Cat, Cons, Car, Cdr, List,  // primitive procs
     Define = 'd', Lambda = 'l', Number = '#', Name = 'n', Expr = 'e', Proc = 'p', False = 'f', True = 't', Cond = 'c', Else = ',', End = '.', Empty = ' ',    // special cases
     Quote = '\'', Lp = '(', Rp = ')', And = '&', Not = '!', Or = '|', 
-    Mul = '*', Add = '+', Sub = '-', Div = '/', Less = '<', Equal = '=', Greater = '>'  // primitive operators
+    Mul = '*', Add = '+', Sub = '-', Div = '/', Less = '<', Equal = '=', Greater = '>',  // primitive operators
+    Comment = ';'
 };
 
 map<string, Kind> keywords {{"define", Kind::Define}, {"lambda", Kind::Lambda}, {"cond", Kind::Cond},
@@ -119,9 +120,10 @@ public:
     bool eof() { return ip->eof(); }
     bool base() { return old.size() == 0; }
     void reset() { ip = old.back(); old.pop_back(); }
+    void ignoreln() { cout << "Ignoring line"; ip->ignore(9001, '\n'); }
 
-    void set_input(istream& instream_ref) { old.push_back(ip); /*close();*/ ip = &instream_ref; }
-    void set_input(istream* instream_pt) { old.push_back(ip); /*close();*/ ip = instream_pt; owns.push_back(ip); }
+    void set_input(istream& instream_ref) { old.push_back(ip); ip = &instream_ref; }
+    void set_input(istream* instream_pt) { old.push_back(ip); ip = instream_pt; owns.push_back(ip); }
 
 private:
     // void close() { if (owns) delete ip; }
@@ -145,16 +147,17 @@ Cell Cell_stream::get() {
     switch (c) {
         case '!':
         case '&':
-        case '*':
-        case '/':
-        case '+':
-        case '-':
+        case '\'':
         case '(':
         case ')':
+        case '*':
+        case '+':
+        case '-':
+        case ';':
+        case '/':
         case '<':
-        case '>':
         case '=':
-        case '\'':
+        case '>':
         case '|':
             return ct = {static_cast<Kind>(c)}; // primitive operators
         case '0':
@@ -166,8 +169,7 @@ Cell Cell_stream::get() {
         case '6':
         case '7':
         case '8':
-        case '9':
-        case '.': {  // possibly make . list shorthand
+        case '9': {
             ip->putback(c);
             double temp;
             *ip >> temp;
@@ -276,6 +278,11 @@ List expr() {   // returns an unevaluated expression from stream
             }
             case Kind::End:
             case Kind::Rp: return res;  // for initial expr call, all nested expr calls will exit through first case
+            case Kind::Comment: 
+                cout << "Comment encountered\n";
+                if (cs.get().kind == Kind::Lp) { cout << "Comment at start of line\n"; cs.ignoreln(); cs.get(); }   // comment start of line, eat ( or ; on next line
+                else cs.ignoreln(); 
+                break; 
             default: res.push_back(cs.current()); break;   // anything else just push back as is
         }
     }
@@ -671,11 +678,9 @@ void alloc_env() {
 
 void start(bool print_res) {
     while (true) {
-        cout << "Start loop\n";
         if (print_res) cout << "> ";
         cs.get();   // eat up first '('
         try {
-            cout << "Reading from stream\n";
             auto res = eval(expr(), &e0);
             if (print_res)
                 cout << res << '\n';    

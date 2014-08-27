@@ -26,6 +26,10 @@ List Parser::expr() {   // returns an unevaluated expression from stream
             }
             case Kind::End:
             case Kind::Rp: return res;  // for initial expr call, all nested expr calls will exit through first case
+            case Kind::Comment: 
+                if (cs.get().kind == Kind::Lp) { cs.ignoreln(); cs.get(); }   // comment start of line, eat ( or ; on next line
+                else cs.ignoreln(); 
+                break; 
             default: res.push_back(cs.current()); break;   // anything else just push back as is
         }
     }

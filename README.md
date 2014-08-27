@@ -9,6 +9,7 @@ Features:
  - first class procedures and by extension higher order procedures
  - lexical scoping so you don't have to worry about local variables clashing in called procedures
  - free typed arguments, e.g. (define (add x) ...) x is expected by the semantics to be a list, but not enforced
+ - ;; and ; comments, use double for start of line comments
 
 
 <a href="http://www.boost.org/users/download/"><img alt="Get boost" src="http://www.boost.org/style-v2/css_0/get-boost.png"></a> <br>
@@ -21,26 +22,33 @@ a binary built on Ubuntu 14.04 which should work on most Unix based machines.
 Example:
 
 ```
-(include funcs.scm)
+;; comments use semicolons, use double semicolon ;; for start of line comments
 
-(define compose (lambda (f g)
+(include funcs.scm)     ; don't do this! recursive inclusion is bad D:
+
+(define compose (lambda (f g)   ; fundamental higher order procedure
         (lambda (x)
                 (f (g x)))))
 
-(define (add x)
-        (cond ((empty x) 0)
-              (else (+ (car x) (add (cdr x))))))
-
-(define expt (lambda (x n)
+(define expt (lambda (x n)      ; exponential 
               (cond ((= n 1) x)
                     (else (* x 
                              (expt x (- n 1)))))))
 
-(define (nth-power n)
+(define nth-power (lambda (n)
         (lambda (x)
                 (expt x n))))
 
 (define square (nth-power 2))
+
+(define cube (nth-power 3))
+
+(define square_and_cube (compose square cube))
+
+(define (add x)
+        (cond ((empty? x) 0)
+              (else (+ (car x) (add (cdr x))))))
+
 
 (cat 'something 'somethingelse)
 

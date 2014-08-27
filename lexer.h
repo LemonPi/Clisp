@@ -15,7 +15,8 @@ namespace Lexer {
         Cat, Cons, Car, Cdr, List,  // primitive procs
         Define = 'd', Lambda = 'l', Number = '#', Name = 'n', Expr = 'e', Proc = 'p', False = 'f', True = 't', Cond = 'c', Else = ',', End = '.', Empty = ' ',   // special cases
         Quote = '\'', Lp = '(', Rp = ')', And = '&', Not = '!', Or = '|',
-        Mul = '*', Add = '+', Sub = '-', Div = '/', Less = '<', Equal = '=', Greater = '>'  // primitive operators
+        Mul = '*', Add = '+', Sub = '-', Div = '/', Less = '<', Equal = '=', Greater = '>',  // primitive operators
+        Comment = ';'
     };
 
     struct Proc {
@@ -63,6 +64,7 @@ namespace Lexer {
         bool eof() { return ip->eof(); }
         bool base() { return old.size() == 0; }
         void reset() { ip = old.back(); old.pop_back(); }
+        void ignoreln() { ip->ignore(9001, '\n'); }
 
         void set_input(istream& instream_ref) { old.push_back(ip); ip = &instream_ref; }
         void set_input(istream* instream_pt) { old.push_back(ip); ip = instream_pt; owns.push_back(ip); }
