@@ -9,7 +9,7 @@ Features:
  - first class procedures and by extension higher order procedures
  - lexical scoping so you don't have to worry about local variables clashing in called procedures
  - free typed arguments, e.g. (define (add x) ...) x is expected by the semantics to be a list, but not enforced
- - ;; and ; comments, use double for start of line comments
+ - ; comments 
 
 
 <a href="http://www.boost.org/users/download/"><img alt="Get boost" src="http://www.boost.org/style-v2/css_0/get-boost.png"></a> <br>
@@ -22,7 +22,7 @@ a binary built on Ubuntu 14.04 which should work on most Unix based machines.
 Example:
 
 ```
-;; comments use semicolons, use double semicolon ;; for start of line comments
+; comments to end of line
 
 (include funcs.scm)     ; don't do this! recursive inclusion is bad D:
 

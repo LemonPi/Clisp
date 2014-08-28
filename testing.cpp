@@ -113,14 +113,14 @@ class Cell_stream {
 public:
     Cell_stream(istream& instream_ref) : ip{&instream_ref} {}
     Cell_stream(istream* instream_pt)  : ip{instream_pt}, owns{instream_pt} {}
-    ~Cell_stream() { for (auto p : owns) delete p; }
+    ~Cell_stream() { /*for (auto p : owns) delete p;*/ }
 
     Cell get();    // get and return next cell
     const Cell& current() { return ct; } // most recently get cell
     bool eof() { return ip->eof(); }
     bool base() { return old.size() == 0; }
-    void reset() { ip = old.back(); old.pop_back(); }
-    void ignoreln() { cout << "Ignoring line"; ip->ignore(9001, '\n'); }
+    void reset() { if (owns.back() == ip) delete owns.back(); ip = old.back(); old.pop_back(); }
+    void ignoreln() { cout << "Ignoring line\n"; ip->ignore(9001, '\n'); }
 
     void set_input(istream& instream_ref) { old.push_back(ip); ip = &instream_ref; }
     void set_input(istream* instream_pt) { old.push_back(ip); ip = instream_pt; owns.push_back(ip); }
@@ -258,20 +258,21 @@ ostream& operator<<(ostream& os, const Cell& c) {
 namespace Parser {
     Env* bind(const List& params, const List& args, Env* env);
 }
-List expr();    // parses an expression without evaluating it, returning it as the lstval inside a cell
+List expr(bool getfirst);    // parses an expression without evaluating it, returning it as the lstval inside a cell
 Cell eval(const List& expr, Env* env);     // delayed evaluation of expression given back by expr()
 Cell apply(const Cell& c, const List& args);           // applies a procedure to return a value
 List evlist(const List& expr, Env* env);
 Cell apply_prim(const Cell& prim, const List& args);
 
-List expr() {   // returns an unevaluated expression from stream
+List expr(bool getfirst) {   // returns an unevaluated expression from stream
     List res;
+    if (getfirst && cs.get().kind == Kind::Comment) { cout << "Comment at start of line\n"; cs.ignoreln(); cs.get(); }    // eat either first ( or ;
     // expr ... (expr) ...) starts with first lp eaten
     while (true) {
         cs.get();
         switch (cs.current().kind) {
             case Kind::Lp: {    // start of another expression
-                res.push_back(expr());  // construct with List, kind is expr and data stored in lstval
+                res.push_back(expr(false));  // construct with List, kind is expr and data stored in lstval
                 // after geting in an ( expression ' ' <-- expecting rp
                 if (cs.current().kind != Kind::Rp) throw runtime_error("')' expected");
                 break;
@@ -280,8 +281,7 @@ List expr() {   // returns an unevaluated expression from stream
             case Kind::Rp: return res;  // for initial expr call, all nested expr calls will exit through first case
             case Kind::Comment: 
                 cout << "Comment encountered\n";
-                if (cs.get().kind == Kind::Lp) { cout << "Comment at start of line\n"; cs.ignoreln(); cs.get(); }   // comment start of line, eat ( or ; on next line
-                else cs.ignoreln(); 
+                cs.ignoreln(); 
                 break; 
             default: res.push_back(cs.current()); break;   // anything else just push back as is
         }
@@ -679,9 +679,8 @@ void alloc_env() {
 void start(bool print_res) {
     while (true) {
         if (print_res) cout << "> ";
-        cs.get();   // eat up first '('
         try {
-            auto res = eval(expr(), &e0);
+            auto res = eval(expr(true), &e0);
             if (print_res)
                 cout << res << '\n';    
             if (res.kind == Kind::End || cs.eof()) { cout << "At end of stream, reseting\n"; cs.reset(); if (cs.base()) print_res =  true; }

@@ -16,9 +16,8 @@ namespace Driver {
 
         while (true) {
             if (print_res) cout << "> ";
-            cs.get();   // eat up first '('
             try {
-                auto res = eval(expr(), &e0);
+                auto res = eval(expr(true), &e0);
                 if (print_res)
                     cout << res << '\n';    
                 if (res.kind == Kind::End || cs.eof()) { cs.reset(); if (cs.base()) print_res = true; }

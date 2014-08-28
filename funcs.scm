@@ -1,4 +1,4 @@
-;; comments use semicolons, use double semicolon ;; for start of line comments
+; comments use semicolons, use double semicolon ;; for start of line comments
 (define compose (lambda (f g)   ; fundamental higher order procedure
         (lambda (x)
                 (f (g x)))))

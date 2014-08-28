@@ -12,24 +12,22 @@ const T& get(Iter p) {
     return boost::get<T>(p->data);
 }
 
-List Parser::expr() {   // returns an unevaluated expression from stream
+List Parser::expr(bool getfirst) {   // returns an unevaluated expression from stream
     List res;
+    if (getfirst && cs.get().kind == Kind::Comment) { cs.ignoreln(); cs.get(); }    // eat either first ( or ;
     // expr ... (expr) ...) starts with first lp eaten
     while (true) {
         cs.get();
         switch (cs.current().kind) {
             case Kind::Lp: {    // start of another expression
-                res.push_back(expr());  // construct with List, kind is expr and data stored in lstval
+                res.push_back(expr(false));  // construct with List, kind is expr and data stored in lstval
                 // after geting in an ( expression ' ' <-- expecting rp
                 if (cs.current().kind != Kind::Rp) throw runtime_error("')' expected");
                 break;
             }
             case Kind::End:
             case Kind::Rp: return res;  // for initial expr call, all nested expr calls will exit through first case
-            case Kind::Comment: 
-                if (cs.get().kind == Kind::Lp) { cs.ignoreln(); cs.get(); }   // comment start of line, eat ( or ; on next line
-                else cs.ignoreln(); 
-                break; 
+            case Kind::Comment: cs.ignoreln(); break; 
             default: res.push_back(cs.current()); break;   // anything else just push back as is
         }
     }
