@@ -57,13 +57,12 @@ namespace Lexer {
     public:
         Cell_stream(istream& instream_ref) : ip{&instream_ref} {}
         Cell_stream(istream* instream_pt)  : ip{instream_pt}, owns{instream_pt} {}
-        ~Cell_stream() { for (auto p : owns) delete p; }
 
         Cell get();    // get and return next cell
         const Cell& current() { return ct; } // most recently get cell
         bool eof() { return ip->eof(); }
         bool base() { return old.size() == 0; }
-        void reset() { ip = old.back(); old.pop_back(); }
+        void reset() { if (owns.back() == ip) { delete owns.back(); owns.pop_back(); } ip = old.back(); old.pop_back(); }
         void ignoreln() { ip->ignore(9001, '\n'); }
 
         void set_input(istream& instream_ref) { old.push_back(ip); ip = &instream_ref; }
