@@ -113,7 +113,6 @@ class Cell_stream {
 public:
     Cell_stream(istream& instream_ref) : ip{&instream_ref} {}
     Cell_stream(istream* instream_pt)  : ip{instream_pt}, owns{instream_pt} {}
-    ~Cell_stream() { /*for (auto p : owns) delete p;*/ }
 
     Cell get();    // get and return next cell
     const Cell& current() { return ct; } // most recently get cell
@@ -266,7 +265,7 @@ Cell apply_prim(const Cell& prim, const List& args);
 
 List expr(bool getfirst) {   // returns an unevaluated expression from stream
     List res;
-    if (getfirst && cs.get().kind == Kind::Comment) { cout << "Comment at start of line\n"; cs.ignoreln(); cs.get(); }    // eat either first ( or ;
+    while (getfirst && cs.get().kind == Kind::Comment) { cout << "Comment at start of line\n"; cs.ignoreln(); }  // eat either first ( or ;
     // expr ... (expr) ...) starts with first lp eaten
     while (true) {
         cs.get();

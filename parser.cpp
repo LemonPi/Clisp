@@ -2,6 +2,7 @@
 #include "environment.h"
 #include "error.h"
 #include <fstream>
+#include <sstream>
 
 using namespace std;
 using namespace Lexer;
@@ -14,7 +15,7 @@ const T& get(Iter p) {
 
 List Parser::expr(bool getfirst) {   // returns an unevaluated expression from stream
     List res;
-    if (getfirst && cs.get().kind == Kind::Comment) { cs.ignoreln(); cs.get(); }    // eat either first ( or ;
+    while (getfirst && cs.get().kind == Kind::Comment) cs.ignoreln();   // eat either first ( or ;
     // expr ... (expr) ...) starts with first lp eaten
     while (true) {
         cs.get();
@@ -211,7 +212,10 @@ Cell Parser::apply(const Cell& c, const List& args) {  // expect fully evaluated
 
 Env* Parser::bind(const List& params, const List& args, Env* env) {
     Env newenv {env};
-    if (params.size() != args.size()) throw runtime_error("# of args provided and expected mismatch");
+    if (params.size() != args.size()) { 
+        stringstream msg; msg << "provided args : " << args.size() << " expected: " << params.size();
+        throw runtime_error(msg.str());
+    }
     auto q = args.begin();
     for (auto p = params.begin(); p != params.end(); ++p, ++q)
         newenv[get<string>(p)] = *q;

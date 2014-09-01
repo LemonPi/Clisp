@@ -16,7 +16,6 @@ Cell Cell_stream::get() {
     // get 1 char, decide what kind of cell is incoming,
     // appropriately get more char then return Cell
     char c = 0;
-
     do {  // skip all whitespace including newline
         if(!ip->get(c)) return ct = {Kind::End};  // no char can be get from ip
     } while (isspace(c));
