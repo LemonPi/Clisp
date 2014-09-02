@@ -45,6 +45,9 @@ Cell Parser::eval(const List& expr, Env* env) {
             case Kind::Quote: 
                 if (p + 1 == expr.end()) throw runtime_error("Quote expects 1 arg");
                 return *++p;  
+            case Kind::Begin:       // (begin a b c d ... return)
+                evlist({++p, expr.end() - 1}, env);
+                return eval({expr.back()}, env);    
             case Kind::Lambda: {    // (lambda (params) (body))
                 if (p + 2 >= expr.end()) throw runtime_error("Malformed lambda expression");
                 auto params = get<List>(++p);
@@ -127,6 +130,10 @@ List Parser::evlist(const List& expr, Env* env) {
             case Kind::Quote: 
                 if (p + 1 == expr.end()) throw runtime_error("Quote expects 1 arg");
                 res.push_back(*++p); break;  
+            case Kind::Begin:       // (begin a b c d ... return)
+                evlist({++p, expr.end() - 1}, env);
+                res.push_back(eval({expr.back()}, env));
+                return res;
             case Kind::Lambda: {    // (lambda (params) (body))
                 if (p + 2 >= expr.end()) throw runtime_error("Malformed lambda expression");
                 auto params = get<List>(++p);

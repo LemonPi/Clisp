@@ -11,8 +11,8 @@ namespace Lexer {
     using namespace std;
 
     enum class Kind : char {
-        Include,
-        Cat, Cons, Car, Cdr, List,  // primitive procs
+        Include, 
+        Cat, Cons, Car, Cdr, List, Begin,  // primitive procs
         Define = 'd', Lambda = 'l', Number = '#', Name = 'n', Expr = 'e', Proc = 'p', False = 'f', True = 't', Cond = 'c', Else = ',', End = '.', Empty = ' ',   // special cases
         Quote = '\'', Lp = '(', Rp = ')', And = '&', Not = '!', Or = '|',
         Mul = '*', Add = '+', Sub = '-', Div = '/', Less = '<', Equal = '=', Greater = '>',  // primitive operators

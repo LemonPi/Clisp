@@ -10,7 +10,7 @@ Cell_stream Lexer::cs {std::cin};
 map<string, Kind> Lexer::keywords {{"define", Kind::Define}, {"lambda", Kind::Lambda}, {"cond", Kind::Cond},
     {"cons", Kind::Cons}, {"car", Kind::Car}, {"cdr", Kind::Cdr}, {"list", Kind::List}, {"else", Kind::Else},
     {"empty?", Kind::Empty}, {"and", Kind::And}, {"or", Kind::Or}, {"not", Kind::Or}, {"cat", Kind::Cat},
-    {"include", Kind::Include}};
+    {"include", Kind::Include}, {"begin", Kind::Begin}};
 
 Cell Cell_stream::get() {
     // get 1 char, decide what kind of cell is incoming,
@@ -53,6 +53,7 @@ Cell Cell_stream::get() {
         case '|':
             return ct = {static_cast<Kind>(c)}; // primitive operators
         case 'a':
+        case 'b':
         case 'c':
         case 'd':
         case 'e':

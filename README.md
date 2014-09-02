@@ -22,9 +22,9 @@ a binary built on Ubuntu 14.04 which should work on most Unix based machines.
 Example:
 
 ```
-; comments to end of line
-
 (include funcs.scm)     ; don't do this! recursive inclusion is bad D:
+
+(define (if test a b) (cond ((test) a) (else b)))
 
 (define compose (lambda (f g)   ; fundamental higher order procedure
         (lambda (x)
@@ -49,6 +49,7 @@ Example:
         (cond ((empty? x) 0)
               (else (+ (car x) (add (cdr x))))))
 
+(begin (do something) (do somethingelse) result)    ; basic sequencing
 
 (cat 'something 'somethingelse)
 
@@ -65,7 +66,7 @@ Tips:
  - build debug information (with step by step info) by changing build target and source in makefile to "testing" and "testing.cpp" respectively
  - requires a compiler supporting C++11
  - uses boost::variant (link above)
- - keywords (so far): define, lambda, cond, cons, cdr, list, else, and, or, not, empty?, include
+ - keywords (so far): define, lambda, cond, cons, cdr, list, else, and, or, not, empty?, include, begin
  - use 'quote to signify string
      - `string` will raise an error if it's not defined, but `'string` will return string
  - use cat primitive instead of + to concatenate strings
