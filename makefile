@@ -19,3 +19,6 @@ clean:
 
 test: $(EXECUTIBLE)
 	valgrind -q --track-origins=yes ./$(EXECUTIBLE)
+
+debug: $(EXECUTIBLE)
+	gdb ./$(EXECUTIBLE)

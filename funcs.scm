@@ -48,3 +48,9 @@
 
 (define (inc x) (+ x 1))
 (define (linear-sum lower upper) (sum inc 0 lower upper))
+
+(define (factorial n)
+        (cond ((< n 2) 1) (else (* n (factorial (- n 1))))))
+
+(define (add4 n)
+        (let ((x 4)) (+ x n)))  ; demonstrates local variables

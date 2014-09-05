@@ -9,6 +9,7 @@ Features:
  - first class procedures and by extension higher order procedures
  - lexical scoping so you don't have to worry about local variables clashing in called procedures
  - free typed arguments, e.g. (define (add x) ...) x is expected by the semantics to be a list, but not enforced
+ - local binding (essentially giving code blocks) with keyword let
  - ; comments 
 
 
@@ -50,6 +51,9 @@ Example:
               (else (+ (car x) (add (cdr x))))))
 
 (begin (do something) (do somethingelse) result)    ; basic sequencing
+
+(define (add4 n)
+        (let ((x 4)) (+ x n)))  ; basic local binding
 
 (cat 'something 'somethingelse)
 

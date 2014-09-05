@@ -77,6 +77,20 @@ Cell Parser::eval(const List& expr, Env* env) {
                 if (res.size() == 1) return {res[0]}; // single element
                 return {res};
             }
+            // (let (definitions...) body) block structure
+            case Kind::Let: {
+                if (p + 2 >= expr.end()) throw runtime_error("Let expects a list of definitions and a body");
+                auto localvars = get<List>(++p); // ((name val) (name val) ...)
+                Env localenv {env};
+                for (auto& pair : localvars)    // add to local env
+                    localenv[boost::get<string>((boost::get<List>(pair.data)[0]).data)] = eval({boost::get<List>(pair.data)[1]}, env);
+                // evaluate rest of expression inside new env
+                if ((++p)->kind == Kind::Expr) {
+                    auto body = get<List>(p);
+                    return eval(body, &localenv);   // local env is temporary, no need to allocate on heap
+                }
+                return eval({*p}, &localenv);   
+            }
             // (cond ((pred) (expr)) ((pred) (expr)) ...(else expr)) expect list of pred-expr pairs
             case Kind::Cond: {
                 while (++p != expr.end()) {
@@ -167,6 +181,21 @@ List Parser::evlist(const List& expr, Env* env) {
                 if (r.size() == 1) res.push_back({r[0]}); // single element result
                 else res.push_back({r});
                 break;
+            }
+            // (let (definitions...) body) block structure
+            case Kind::Let: {
+                if (p + 2 >= expr.end()) throw runtime_error("Let expects a list of definitions and a body");
+                auto localvars = get<List>(++p); // ((name val) (name val) ...)
+                Env localenv {env};
+                for (auto& pair : localvars) // add to local env
+                    localenv[boost::get<string>((boost::get<List>(pair.data)[0]).data)] = eval({boost::get<List>(pair.data)[1]}, env);
+                // evaluate rest of expression inside new env
+                if ((++p)->kind == Kind::Expr) {
+                    auto body = get<List>(p);
+                    res.push_back(eval(body, &localenv));   
+                }
+                else res.push_back(eval({*p}, &localenv));
+                return res;   
             }
             // (cond ((pred) (expr)) ((pred) (expr)) ...) expect list of pred-expr pairs
             case Kind::Cond: {

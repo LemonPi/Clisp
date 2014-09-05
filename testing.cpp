@@ -12,7 +12,7 @@ using boost::variant;
 // -------------------- data structures
 enum class Kind : char {
     Include,        // meta processing
-    Cat, Cons, Car, Cdr, List,  // primitive procs
+    Begin, Cat, Cons, Car, Cdr, List, Let,  // primitive procs
     Define = 'd', Lambda = 'l', Number = '#', Name = 'n', Expr = 'e', Proc = 'p', False = 'f', True = 't', Cond = 'c', Else = ',', End = '.', Empty = ' ',    // special cases
     Quote = '\'', Lp = '(', Rp = ')', And = '&', Not = '!', Or = '|', 
     Mul = '*', Add = '+', Sub = '-', Div = '/', Less = '<', Equal = '=', Greater = '>',  // primitive operators
@@ -22,7 +22,7 @@ enum class Kind : char {
 map<string, Kind> keywords {{"define", Kind::Define}, {"lambda", Kind::Lambda}, {"cond", Kind::Cond},
     {"cons", Kind::Cons}, {"car", Kind::Car}, {"cdr", Kind::Cdr}, {"list", Kind::List}, {"else", Kind::Else},
     {"empty?", Kind::Empty}, {"and", Kind::And}, {"or", Kind::Or}, {"not", Kind::Or}, {"cat", Kind::Cat},
-    {"include", Kind::Include}};
+    {"include", Kind::Include}, {"begin", Kind::Begin}, {"let", Kind::Let}};
 
 class Cell;
 class Env;
@@ -302,6 +302,10 @@ Cell eval(const List& expr, Env* env) {
             case Kind::Quote: 
                 if (p + 1 == expr.end()) throw runtime_error("Quote expects 1 arg");
                 return *++p;  
+            case Kind::Begin:       // (begin a b c d ... return)
+                cout << "Beginning sequence\n";
+                evlist({++p, expr.end() - 1}, env);
+                return eval({expr.back()}, env);    
             case Kind::Lambda: {    // (lambda (params) (body))
                 if (p + 2 >= expr.end()) throw runtime_error("Malformed lambda expression");
                 auto params = get<List>(++p);
@@ -330,6 +334,26 @@ Cell eval(const List& expr, Env* env) {
                 auto res = evlist(get<List>(p), env); 
                 if (res.size() == 1) return {res[0]}; // single element
                 return {res};
+            }
+            case Kind::Let: {
+                if (p + 2 >= expr.end()) throw runtime_error("Let expects a list of definitions and a body");
+                auto localvars = get<List>(++p); // ((name val) (name val) ...)
+                cout << "Creating temp env for local vars of let (eval)\n";
+                Env localenv {env};
+                for (auto& pair : localvars) {// add to local env
+                    string name {boost::get<string>((boost::get<List>(pair.data)[0]).data)};
+                    cout << "Name: " << name;
+                    auto val = eval({boost::get<List>(pair.data)[1]}, env);
+                    cout << "  Value: " << val << '\n';
+                    localenv[name] = val;
+                }
+                // envs.push_back(localenv);
+                // evaluate rest of expression inside new env
+                if ((++p)->kind == Kind::Expr) {
+                    auto body = get<List>(p);
+                    return eval(body, &localenv);
+                }
+                else return eval({*p}, &localenv);
             }
             // (cond ((pred) (expr)) ((pred) (expr)) ...(else expr)) expect list of pred-expr pairs
             case Kind::Cond: {
@@ -409,6 +433,11 @@ List evlist(const List& expr, Env* env) {
             case Kind::Quote: 
                 if (p + 1 == expr.end()) throw runtime_error("Quote expects 1 arg");
                 res.push_back(*++p); break;  
+            case Kind::Begin:       // (begin a b c d ... return)
+                cout << "Beginning sequence (evlist)\n";
+                evlist({++p, expr.end() - 1}, env);
+                res.push_back(eval({expr.back()}, env));
+                return res;
             case Kind::Lambda: {    // (lambda (params) (body))
                 if (p + 2 >= expr.end()) throw runtime_error("Malformed lambda expression");
                 assert(p + 2 != expr.end()); 
@@ -443,6 +472,26 @@ List evlist(const List& expr, Env* env) {
                 if (r.size() == 1) res.push_back({r[0]}); // single element result
                 else res.push_back({r});
                 break;
+            }
+            case Kind::Let: {
+                if (p + 2 >= expr.end()) throw runtime_error("Let expects a list of definitions and a body");
+                auto localvars = get<List>(++p); // ((name val) (name val) ...)
+                cout << "Creating temp env for local vars of let (evlist)\n";
+                Env localenv {env};
+                for (auto& pair : localvars) {// add to local env
+                    string name {boost::get<string>((boost::get<List>(pair.data)[0]).data)};
+                    cout << "Name: " << name;
+                    auto val = eval({boost::get<List>(pair.data)[1]}, env);
+                    cout << "  Value: " << val << '\n';
+                    localenv[name] = val;
+                }
+                // evaluate rest of expression inside new env
+                if ((++p)->kind == Kind::Expr) {
+                    auto body = get<List>(p);
+                    res.push_back(eval(body, &localenv));
+                }
+                else res.push_back(eval({*p}, &localenv));
+                return res;   
             }
             // (cond ((pred) (expr)) ((pred) (expr)) ...) expect list of pred-expr pairs
             case Kind::Cond: {

@@ -12,7 +12,7 @@ namespace Lexer {
 
     enum class Kind : char {
         Include, 
-        Cat, Cons, Car, Cdr, List, Begin,  // primitive procs
+        Begin, Cat, Cons, Car, Cdr, List, Let,   // primitive procs
         Define = 'd', Lambda = 'l', Number = '#', Name = 'n', Expr = 'e', Proc = 'p', False = 'f', True = 't', Cond = 'c', Else = ',', End = '.', Empty = ' ',   // special cases
         Quote = '\'', Lp = '(', Rp = ')', And = '&', Not = '!', Or = '|',
         Mul = '*', Add = '+', Sub = '-', Div = '/', Less = '<', Equal = '=', Greater = '>',  // primitive operators
