@@ -6,6 +6,7 @@ I was inspired to make this after watching all the [SICP](http://ocw.mit.edu/cou
 
 Features:
  - file inclusion e.g. (include test.scm), can be nested inside files 
+ - optimized tail recursion
  - first class procedures and by extension higher order procedures
  - lexical scoping so you don't have to worry about local variables clashing in called procedures
  - free typed arguments, e.g. (define (add x) ...) x is expected by the semantics to be a list, but not enforced
@@ -64,6 +65,7 @@ Example:
 
 Tips:
  - build by typing "make" in the same directory
+ - build benchmark version by replacing main.cpp with timing.cpp in makefile
  - list parameters (such as x for add above) treated same as 'normal' parameters
  - interpret files with `./clisp [filename] [-p]`, add -p or -print option to force printing of file evaluation, silent by default (assumes a lot of definitions)
     - include files with (include filename), which can be nested
