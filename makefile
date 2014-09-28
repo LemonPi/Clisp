@@ -1,4 +1,4 @@
-CC=g++
+CC=em++
 CFLAGS=-g -Wall -Werror -std=c++11 -O3
 EXECUTIBLE=clisp
 SOURCES=main.cpp parser.cpp lexer.cpp error.cpp environment.cpp

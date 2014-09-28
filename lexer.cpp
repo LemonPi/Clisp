@@ -6,6 +6,7 @@ using std::cout;
 using namespace Lexer;
 
 Cell_stream Lexer::cs {std::cin};
+ostream* Lexer::outstream {&std::cout};
 
 map<string, Kind> Lexer::keywords {{"define", Kind::Define}, {"lambda", Kind::Lambda}, {"cond", Kind::Cond},
     {"cons", Kind::Cons}, {"car", Kind::Car}, {"cdr", Kind::Cdr}, {"list", Kind::List}, {"else", Kind::Else},

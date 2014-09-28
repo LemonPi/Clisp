@@ -7,9 +7,12 @@
 #include "boost/variant.hpp"
 #include "forward.h"
 
+
+
 namespace Lexer {
     using namespace std;
 
+	extern ostream* outstream;
     enum class Kind : char {
         Include, 
         Begin, Cat, Cons, Car, Cdr, List, Let,   // primitive procs
@@ -94,16 +97,16 @@ namespace Lexer {
         print_visitor() {}
         print_visitor(string e) : end{e} {}
         void operator()(const string& str) const {
-            cout << str << end;
+            *outstream << str << end;
         }
         void operator()(const double num) const {
-            cout << num << end;
+            *outstream << num << end;
         }
         void operator()(const Lexer::Proc* proc) const {
-            cout << "proc" << end;
+            *outstream << "proc" << end;
         }
         void operator()(const Lexer::List list) const {
-            cout << '(';
+            *outstream << '(';
             if (list.size() > 0) {
                 auto p = list.begin();
                 if(p->kind != Kind::Number && p->kind != Kind::Name && p->kind != Kind::Expr) cout << static_cast<char>(p->kind);    // primitive
@@ -111,7 +114,7 @@ namespace Lexer {
                     boost::apply_visitor(print_visitor(), p->data);
                 boost::apply_visitor(print_visitor(""), p->data);
             }
-            cout << ')' << end;
+            *outstream << ')' << end;
         }
     };
 
