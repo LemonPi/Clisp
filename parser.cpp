@@ -16,6 +16,16 @@ const T& get(Iter p) {
 List Parser::expr(bool getfirst) {   // returns an unevaluated expression from stream
     List res;
     while (getfirst && cs.get().kind == Kind::Comment) cs.ignoreln();   // eat either first ( or ;
+    if (cs.current().kind != Kind::Lp) {    // not a call, doesn't start with (
+        if (cs.current().kind == Kind::End) return res;
+        res.push_back(cs.current()); 
+        if (cs.current().kind == Kind::Quote) {
+            List quote(expr(true));
+            if (quote.size() == 1) res.push_back(quote[0]); 
+            else res.push_back(quote); 
+        }
+        return res;   
+    } 
     // expr ... (expr) ...) starts with first lp eaten
     while (true) {
         cs.get();
@@ -26,7 +36,7 @@ List Parser::expr(bool getfirst) {   // returns an unevaluated expression from s
                 if (cs.current().kind != Kind::Rp) throw runtime_error("')' expected");
                 break;
             }
-            case Kind::End:
+            case Kind::End: 
             case Kind::Rp: return res;  // for initial expr call, all nested expr calls will exit through first case
             case Kind::Comment: cs.ignoreln(); break; 
             default: res.push_back(cs.current()); break;   // anything else just push back as is
