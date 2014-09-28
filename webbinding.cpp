@@ -1,4 +1,5 @@
 #include <sstream>
+#include <exception>
 #include "parser.h"
 #include "lexer.h"
 #include "environment.h"
@@ -22,10 +23,15 @@ string expr_str(string input) {
 	ostringstream out;
 	outstream = &out;
 	cs.set_input(in);
-	// ts.set_input(nullptr);
-	auto res = eval(expr(true), &e0);
-	*outstream << res;
-	return out.str();
+	try {
+		auto res = eval(expr(true), &e0);
+		*outstream << res;
+		return out.str();
+	}
+	catch (exception& e) {
+		string msg {"Bad expression: "};
+		return msg + e.what();    // continue loop
+	}
 }
 
 
