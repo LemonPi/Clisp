@@ -109,7 +109,7 @@ Cell Parser::eval(const List& expr, Env* env) {
                         if (p + 1 == expr.end()) return eval({clause[1]}, env);
                         else throw runtime_error("Else clause not at end of condition");
                     }
-                    if (eval({clause[0]}, env)) return eval({clause[1]}, env);
+                    if (eval({clause[0]}, env)) return eval({clause.begin() + 1, clause.end()}, env);
                 }
             }
             // primitive procedures
@@ -335,7 +335,12 @@ Cell Parser::apply_prim(const Cell& prim, const List& args) {
         }
         case Kind::Not: return Cell{args[0].kind == Kind::False? Kind::True : Kind::False};  // only expect 1 argument
         case Kind::List:              // same as cons in this implementation, just that cons conventionally expects only 2 args
-        case Kind::Cons: return args; // return List of the args
+        case Kind::Cons: {
+			List res {args[0]};
+			if (args[1].kind == Kind::Expr) res.insert(res.end(), boost::get<List>(args[1].data).begin(), boost::get<List>(args[1].data).end());
+			else res.push_back(args[1]);
+			return res; // return List of the 
+		}
         case Kind::Car: {
             if (args[0].kind != Kind::Expr) return args[0];
             return boost::get<List>(args[0].data)[0]; // args is a list of one cell which holds a list itself

@@ -23,7 +23,7 @@ namespace Driver {
                 if (res.kind == Kind::End || cs.eof()) { cs.reset(); if (cs.base()) print_res = true; }
             }
             catch (exception& e) {
-                cout << "Bad expression: " << e.what() << endl;    // continue loop
+                cout << e.what() << endl;    // continue loop
             }
         }
     }

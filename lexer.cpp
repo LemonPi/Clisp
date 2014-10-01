@@ -7,6 +7,7 @@ using namespace Lexer;
 
 Cell_stream Lexer::cs {std::cin};
 ostream* Lexer::outstream {&std::cout};
+double Lexer::equal_threshold {0.0000001};
 
 map<string, Kind> Lexer::keywords {{"define", Kind::Define}, {"lambda", Kind::Lambda}, {"cond", Kind::Cond},
     {"cons", Kind::Cons}, {"car", Kind::Car}, {"cdr", Kind::Cdr}, {"list", Kind::List}, {"else", Kind::Else},
@@ -89,7 +90,7 @@ Cell Cell_stream::get() {
 }
 
 void Lexer::print(const Cell& cell) {
-    if(cell.kind != Kind::Number && cell.kind != Kind::Name && cell.kind != Kind::Expr) cout << static_cast<char>(cell.kind);    // primitive
+    if(cell.kind != Kind::Number && cell.kind != Kind::Name && cell.kind != Kind::Expr) *outstream << static_cast<char>(cell.kind);    // primitive
     boost::apply_visitor(print_visitor(), cell.data);
 }
 

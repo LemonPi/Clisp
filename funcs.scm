@@ -7,12 +7,32 @@
         (lambda (x)
                 (f (g x)))))
 
+(define (map f seq)				; applies f to each element of seq
+		(cond ((empty? seq) ())
+			(else (cons (f (car seq))
+						(map f (cdr seq))))))
+						
+(define (filter pred seq)		; creates list from seq elements that satisfy pred
+		(cond ((empty? seq) ())
+			  ((pred (car seq))
+					cons (car seq) (filter pred (cdr seq)))
+			  (else (filter pred (cdr seq)))))
+						
+(define (modulo n r)
+		(cond ((< n r) n)
+			  (else (modulo (- n r) r))))
+			  
+; predicates
+(define (even? n) (= (modulo n 2) 0))
+
+(define (odd? n) (= (modulo n 2) 1))
+
+; demonstrative functions
 (define expt (lambda (x n)      ; exponential 
               (cond ((= n 1) x)
                     (else (* x 
                              (expt x (- n 1)))))))
-
-; demonstrative functions
+							 
 (define nth-power (lambda (n)
         (lambda (x)
                 (expt x n))))
@@ -20,8 +40,6 @@
 (define square (nth-power 2))
 
 (define cube (nth-power 3))
-
-(define square_and_cube (compose square cube))
 
 (define (fib-naive x)                 ; inefficient recursive fib, stack usage grows per recursive call
         (cond ((= x 1) 1)

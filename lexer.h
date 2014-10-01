@@ -11,7 +11,7 @@
 
 namespace Lexer {
     using namespace std;
-
+	extern double equal_threshold;
 	extern ostream* outstream;
     enum class Kind : char {
         Include, 
@@ -146,7 +146,7 @@ namespace Lexer {
         equal_visitor(Proc* const p) : proc(p) {}
         equal_visitor(const List& l) : list{l} {}
         bool operator()(const string& s) const { return str == s; }
-        bool operator()(const double n) const { return num == n; }
+        bool operator()(const double n) const { if (num < n) return n - num < equal_threshold; else return num - n < equal_threshold; }
         bool operator()(Proc* const p) const { return proc == p; }
         bool operator()(const List& l) const { return list == l; }
     };

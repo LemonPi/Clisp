@@ -29,8 +29,7 @@ string expr_str(string input) {
 		return out.str();
 	}
 	catch (exception& e) {
-		string msg {"Bad expression: "};
-		return msg + e.what();    // continue loop
+		return e.what();    // continue loop
 	}
 }
 
