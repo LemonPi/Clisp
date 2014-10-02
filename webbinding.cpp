@@ -23,14 +23,17 @@ string expr_str(string input) {
 	ostringstream out;
 	outstream = &out;
 	cs.set_input(in);
-	try {
-		auto res = eval(expr(true), &e0);
-		*outstream << res;
-		return out.str();
+	while (true) {
+		try {
+			auto res = eval(expr(true), &e0);
+            if (res.kind == Kind::End || cs.eof()) break;
+			*outstream << res;
+		}
+		catch (exception& e) {
+			return e.what();    // continue loop
+		}
 	}
-	catch (exception& e) {
-		return e.what();    // continue loop
-	}
+	return out.str();
 }
 
 

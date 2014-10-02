@@ -334,7 +334,7 @@ Cell Parser::apply_prim(const Cell& prim, const List& args) {
             return Cell{Kind::False};
         }
         case Kind::Not: return Cell{args[0].kind == Kind::False? Kind::True : Kind::False};  // only expect 1 argument
-        case Kind::List:              // same as cons in this implementation, just that cons conventionally expects only 2 args
+        case Kind::List: return args;
         case Kind::Cons: {
 			List res {args[0]};
 			if (args[1].kind == Kind::Expr) res.insert(res.end(), boost::get<List>(args[1].data).begin(), boost::get<List>(args[1].data).end());
