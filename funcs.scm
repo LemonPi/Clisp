@@ -17,10 +17,21 @@
 			  ((pred (car seq))
 					cons (car seq) (filter pred (cdr seq)))
 			  (else (filter pred (cdr seq)))))
-						
+
+(define (reduce f start seq)
+	(cond ((empty? seq) start)
+		(else (reduce f (f start (car seq)) 
+						(cdr seq)))))
+
 (define (modulo n r)
 		(cond ((< n r) n)
 			  (else (modulo (- n r) r))))
+
+; primitive wrappers for passing into functions
+(define (add x y) (+ x y))
+(define (sub x y) (- x y))
+(define (mul x y) (* x y))
+(define (div x y) (/ x y))
 			  
 ; predicates
 (define (even? n) (= (modulo n 2) 0))
@@ -53,10 +64,6 @@
 
 (define (fib n) (fib-iter 1 1 n))
 
-(define (add x)                 ; x is semantically a list
-        (cond ((empty? x) 0)
-              (else (+ (car x) (add (cdr x))))))
-
 (define (sum inc accumulate current upper)
         (cond ((= current upper) (+ accumulate current))
               (else (sum inc
@@ -66,6 +73,11 @@
 
 (define (inc x) (+ x 1))
 (define (linear-sum lower upper) (sum inc 0 lower upper))
+
+(define (gcd a b)
+	(cond ((< a b) (gcd a (- b a)))
+		((< b a) (gcd (- a b) b))
+		(else a)))
 
 (define (factorial n)
         (cond ((< n 2) 1) (else (* n (factorial (- n 1))))))
