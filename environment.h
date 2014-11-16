@@ -1,7 +1,7 @@
 #ifndef clispp_environment
 #define clispp_environment
 #include <memory>
-#include <map>
+#include <unordered_map>
 #include "forward.h"
 #include "lexer.h"
 #include "error.h"
@@ -14,7 +14,7 @@ namespace Environment {
 
     class Env {
     private:
-        using Env_map = map<string, Cell>;
+        using Env_map = unordered_map<string, Cell>;
         Env_map env;
         Env* outer;
     public:
