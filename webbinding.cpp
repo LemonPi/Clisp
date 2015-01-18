@@ -36,8 +36,6 @@ string expr_str(string input) {
 	return out.str();
 }
 
-
-
 EMSCRIPTEN_BINDINGS(my_module) {
 	emscripten::function("expr_str", &expr_str);
 }
